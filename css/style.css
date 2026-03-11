@@ -464,8 +464,8 @@ input[type="text"]:focus, textarea:focus, select:focus{
 /* 预览缩放 */
 /* Preview sizing: avoid transform-created blank space by using a fixed-height viewport */
 .previewBox{
-  width: 600px;
-  height: 720px;
+  width: 640px;
+  height: 780px;
   overflow: hidden;
   border-radius: 0;
 
