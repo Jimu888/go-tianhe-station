@@ -186,9 +186,34 @@
   }
 
   let renderTimer = null
+  // Render MUST be done from an unscaled card (otherwise zoom transform pollutes the canvas)
+  const renderCard = exportCard.cloneNode(true)
+  renderCard.id = 'renderCard'
+  renderCard.style.transform = 'none'
+  renderCard.style.position = 'fixed'
+  renderCard.style.left = '-4000px'
+  renderCard.style.top = '0'
+  renderCard.style.zIndex = '-1'
+  document.body.appendChild(renderCard)
+  const rImg = renderCard.querySelector('#exportPosterImg')
+  const rName = renderCard.querySelector('#exportNameText')
+  const rNo = renderCard.querySelector('#exportNoText')
+
+  function syncToRenderCard(){
+    rImg.src = img.src
+    rName.textContent = nameEl.textContent
+    rNo.textContent = noEl.textContent
+    rName.style.left = nameEl.style.left
+    rName.style.top = nameEl.style.top
+    rName.style.fontSize = getComputedStyle(nameEl).fontSize
+    rNo.style.left = noEl.style.left
+    rNo.style.top = noEl.style.top
+    rNo.style.fontSize = getComputedStyle(noEl).fontSize
+  }
+
   async function renderNow(){
-    // Important: html2canvas must see the card in DOM (it is visible here)
-    const canvas = await html2canvas(exportCard, { backgroundColor: null, scale: 1, useCORS: true, allowTaint: true, logging: false })
+    syncToRenderCard()
+    const canvas = await html2canvas(renderCard, { backgroundColor: null, scale: 1, useCORS: true, allowTaint: true, logging: false })
     rendered.src = canvas.toDataURL('image/png')
   }
   function scheduleRender(){
