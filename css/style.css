@@ -34,7 +34,8 @@
   --shadow-large: 0 30px 80px rgba(0,0,0,.35);
 
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --sans: "DingTalk JinBuTi", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC", sans-serif;
+  /* more solemn UI font stack (avoid rounded/cartoon look) */
+  --sans: ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 *{box-sizing:border-box}

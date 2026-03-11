@@ -91,16 +91,15 @@ function showModal(title, text, opts={}){
 
   // style by type
   const styles = {
-    info:  { bg:'rgba(159,214,255,.14)', bd:'rgba(159,214,255,.25)', icon:'i' },
-    ok:    { bg:'rgba(159,214,255,.16)', bd:'rgba(159,214,255,.28)', icon:'✓' },
-    warn:  { bg:'rgba(255,200,120,.16)', bd:'rgba(255,200,120,.28)', icon:'!' },
-    error: { bg:'rgba(255,120,120,.16)', bd:'rgba(255,120,120,.28)', icon:'×' },
+    info:  { dot:'rgba(159,214,255,.85)', glow:'rgba(159,214,255,.10)' },
+    ok:    { dot:'rgba(159,214,255,.95)', glow:'rgba(159,214,255,.14)' },
+    warn:  { dot:'rgba(255,200,120,.95)', glow:'rgba(255,200,120,.12)' },
+    error: { dot:'rgba(255,120,120,.95)', glow:'rgba(255,120,120,.12)' },
   }
   const st = styles[type] || styles.info
   if(modalIcon){
-    modalIcon.style.background = st.bg
-    modalIcon.style.borderColor = st.bd
-    modalIcon.textContent = st.icon
+    modalIcon.style.background = st.dot
+    modalIcon.style.boxShadow = `0 0 0 6px ${st.glow}`
   }
 
   if(modalOk) modalOk.textContent = okText
@@ -315,13 +314,13 @@ async function downloadPNG(){
   if (!isTestMode()) {
     const phone = normalizePhone(phoneInput?.value)
     if (!/^1\d{10}$/.test(phone || '')) {
-      alert('请输入正确的11位手机号')
+      showModal('手机号不正确', '请输入 11 位手机号，用于找回卡片。', { type:'error', okText:'去修改' })
       phoneInput?.focus()
       return
     }
 
     if (!getTurnstileToken()) {
-      alert('请先完成验证（人机校验）')
+      showModal('还差一步', '请先完成下方的人机验证，再领取自由卡。', { type:'info', okText:'去验证' })
       return
     }
   }
@@ -384,7 +383,7 @@ async function downloadPNG(){
     canvas.toBlob((blob)=>{
       if(!blob){
         setStatus('导出失败，请重试', 'error')
-        alert('导出失败，请重试')
+        showModal('导出失败', '图片生成失败了，请再试一次。', { type:'error', okText:'重试' })
         return
       }
       const a = document.createElement('a')
@@ -404,8 +403,9 @@ async function downloadPNG(){
 
   } catch(e){
     console.error(e)
-    setStatus('领取失败：' + (e?.message || 'unknown'), 'error')
-    alert('领取失败：' + (e?.message || 'unknown'))
+    const msg = '领取失败：' + (e?.message || 'unknown')
+    setStatus(msg, 'error')
+    showModal('领取失败', msg, { type:'error', okText:'知道了' })
   } finally {
     btnDownload.disabled = false
     btnDownload.textContent = '抽取卡片并保存'
@@ -435,11 +435,11 @@ btnCopy.addEventListener('click', copyCopyText)
 async function exportAll12(){
   const name = normalizeText(nameInput.value) || '章人丹'
   if (!isTestMode()) {
-    alert('该功能仅测试模式可用（?test=1）')
+    showModal('仅测试模式可用', '这个功能只在测试模式开启：请在网址后加 ?test=1。', { type:'info', okText:'知道了' })
     return
   }
   if (!window.JSZip) {
-    alert('JSZip 未加载，请刷新重试')
+    showModal('组件未加载', 'JSZip 未加载成功，请刷新页面后再试。', { type:'error', okText:'刷新再试' })
     return
   }
 
@@ -587,7 +587,7 @@ async function onCalibCopy(){
   const payload = { [String(currentCardTypeId)]: cfg }
   const text = JSON.stringify(payload, null, 2)
   const ok = await copyTextToClipboard(text)
-  alert(ok ? '已复制（发我即可）' : '复制失败，请手动复制')
+  showModal(ok ? '已复制' : '复制失败', ok ? '内容已复制到剪贴板（直接发我即可）。' : '复制失败了，请手动复制这段内容。', { type: ok ? 'ok' : 'error', okText: ok ? '好的' : '知道了' })
 }
 
 function downloadFile(name, content){
