@@ -147,8 +147,9 @@ export async function onRequestPost(context) {
       cardNo: `#${padNo(cardNoInt)}`,
       image: `/assets/cards/${cardTypeId}.jpg`,
     })
-  } catch {
-    return bad('Server error', 500)
+  } catch (e) {
+    // Return a more explicit error for debugging (still safe: no secrets)
+    return bad('Server error', 500, { message: String(e?.message || e) })
   }
 }
 
