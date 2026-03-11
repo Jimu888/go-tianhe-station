@@ -156,11 +156,12 @@
   top: 800px;
   z-index: 50;
 
-  /* match calib-hd overlay box model to avoid visual drift */
-  padding: 10px 14px;
+  /* IMPORTANT: no padding; coords are for glyph box */
+  padding: 0;
   background: transparent;
+  line-height: 1;
 
-  font-weight: 800;
+  font-weight: 400;
   font-size: 54px;
   letter-spacing: .5px;
 
@@ -179,10 +180,11 @@
   top: 800px;
   z-index: 50;
 
-  padding: 10px 14px;
+  padding: 0;
   background: transparent;
+  line-height: 1;
 
-  font-weight: 700;
+  font-weight: 400;
   font-size: 24px;
   letter-spacing: .2px;
 

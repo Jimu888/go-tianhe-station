@@ -27,13 +27,13 @@
     img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
 
     .overlay{position:absolute;z-index:50;cursor:move;user-select:none;
-      padding:10px 14px;border-radius:14px;background:rgba(0,0,0,.25);outline:2px dashed rgba(159,214,255,.65);outline-offset:8px;
-      -webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;white-space:nowrap;touch-action:none;}
+      padding:0;border-radius:0;background:transparent;outline:2px dashed rgba(159,214,255,.65);outline-offset:8px;
+      -webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;white-space:nowrap;touch-action:none;line-height:1;}
 
-    /* Spec: PingFang + #979595 */
-    .name{font-weight:800;font-size:108px;letter-spacing:.5px;color:#979595;text-shadow:none;
+    /* Spec: PingFang + #979595 (Regular) */
+    .name{font-weight:400;font-size:108px;letter-spacing:.5px;color:#979595;text-shadow:none;
       font-family:"PingFang SC","PingFangSC-Regular","PingFang SC Regular",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans SC","Microsoft YaHei",sans-serif}
-    .no{font-weight:700;font-size:48px;letter-spacing:.2px;color:#979595;text-shadow:none;
+    .no{font-weight:400;font-size:48px;letter-spacing:.2px;color:#979595;text-shadow:none;
       font-family:"PingFang SC","PingFangSC-Regular","PingFang SC Regular",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans SC","Microsoft YaHei",sans-serif}
 
     .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
