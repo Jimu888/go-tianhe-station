@@ -10,7 +10,7 @@
 .shareCard{
   width: 1080px;
   height: 2160px;
-  border-radius: 80px;
+  border-radius: 0;
   overflow: hidden;
   position: relative;
   box-shadow: 0 30px 80px rgba(0,0,0,.35);
