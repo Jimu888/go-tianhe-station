@@ -83,8 +83,8 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
     nameEl.style.top = cfg.name.top + 'px'
     nameEl.style.fontSize = cfg.name.font + 'px'
 
-    // Apply global tweak: move all numbers up 10px
-    const GLOBAL_NO_Y = -20
+    // No global tweak in v2 (HD) coordinates
+    const GLOBAL_NO_Y = 0
     noEl.style.left = cfg.no.left + 'px'
     noEl.style.top = (cfg.no.top + GLOBAL_NO_Y) + 'px'
     noEl.style.fontSize = cfg.no.font + 'px'
@@ -113,7 +113,7 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
     noLeft   = clamp(noLeft, -220, cw + 220)
     noTop    = clamp(noTop, -220, ch + 220)
 
-    const GLOBAL_NO_Y = -20
+    const GLOBAL_NO_Y = 0
 
     nameEl.style.left = Math.round(nameLeft) + 'px'
     nameEl.style.top  = Math.round(nameTop) + 'px'
