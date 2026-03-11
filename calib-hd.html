@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>自由卡校准（同主站渲染）</title>
   <link rel="stylesheet" href="./css/poster.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.0.19/400.css" />
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     :root{--bg:#070c16;--card:rgba(255,255,255,.08);--stroke:rgba(255,255,255,.14);--text:rgba(255,255,255,.92)}
@@ -215,6 +216,9 @@
 
   async function renderNow(){
     syncToRenderCard()
+    if (document.fonts?.ready) {
+      try { await document.fonts.ready } catch {}
+    }
     const canvas = await html2canvas(renderCard, { backgroundColor: null, scale: 1, useCORS: true, allowTaint: true, logging: false })
     rendered.src = canvas.toDataURL('image/png')
   }

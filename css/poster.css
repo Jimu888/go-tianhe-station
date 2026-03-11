@@ -167,7 +167,7 @@
 
   color: #979595;
   text-shadow: none;
-  font-family: "PingFang SC", "PingFangSC-Regular", "PingFang SC Regular", var(--sans);
+  font-family: "Noto Sans SC", "PingFang SC", "PingFangSC-Regular", "PingFang SC Regular", var(--sans);
 
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
@@ -190,6 +190,6 @@
 
   color: #979595;
   text-shadow: none;
-  font-family: "PingFang SC", "PingFangSC-Regular", "PingFang SC Regular", var(--sans);
+  font-family: "Noto Sans SC", "PingFang SC", "PingFangSC-Regular", "PingFang SC Regular", var(--sans);
   white-space: nowrap;
 }

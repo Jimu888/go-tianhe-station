@@ -242,6 +242,9 @@ async function downloadPNG(){
     // Render exportCard to canvas once, then:
     // 1) show preview as dataURL
     // 2) download from same canvas => preview == saved
+    if (document.fonts?.ready) {
+      try { await document.fonts.ready } catch {}
+    }
     const canvas = await html2canvas(exportCard, {
       backgroundColor: null,
       scale: 1,
@@ -330,6 +333,9 @@ async function exportAll12(){
       await ensureImageLoaded(exportPosterImg)
       applyOverlayLayout(i)
 
+      if (document.fonts?.ready) {
+        try { await document.fonts.ready } catch {}
+      }
       const canvas = await html2canvas(exportCard, {
         backgroundColor: null,
         scale: 1,
