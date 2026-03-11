@@ -60,6 +60,10 @@ const modalBox = byId('modalBox')
 const modalTitle = byId('modalTitle')
 const modalText = byId('modalText')
 const modalOk = byId('modalOk')
+const modalCancel = byId('modalCancel')
+const modalClose = byId('modalClose')
+const modalIcon = byId('modalIcon')
+const modalHeader = byId('modalHeader')
 
 function normalizeText(s){
   return (s ?? '').toString().trim().slice(0, 16)
@@ -78,10 +82,34 @@ function setStatus(msg, kind='info'){
   statusBar.style.background = colors[kind] || colors.info
 }
 
-function showModal(title, text){
+function showModal(title, text, opts={}){
   if(!modalMask || !modalBox) return alert(text || title || '')
+  const { type='info', okText='知道了', cancelText='', showCancel=false } = opts || {}
+
   if(modalTitle) modalTitle.textContent = title || '提示'
   if(modalText) modalText.textContent = text || ''
+
+  // style by type
+  const styles = {
+    info:  { bg:'rgba(159,214,255,.14)', bd:'rgba(159,214,255,.25)', icon:'i' },
+    ok:    { bg:'rgba(159,214,255,.16)', bd:'rgba(159,214,255,.28)', icon:'✓' },
+    warn:  { bg:'rgba(255,200,120,.16)', bd:'rgba(255,200,120,.28)', icon:'!' },
+    error: { bg:'rgba(255,120,120,.16)', bd:'rgba(255,120,120,.28)', icon:'×' },
+  }
+  const st = styles[type] || styles.info
+  if(modalIcon){
+    modalIcon.style.background = st.bg
+    modalIcon.style.borderColor = st.bd
+    modalIcon.textContent = st.icon
+  }
+
+  if(modalOk) modalOk.textContent = okText
+
+  if(modalCancel){
+    modalCancel.style.display = (showCancel ? 'inline-flex' : 'none')
+    modalCancel.textContent = cancelText || '取消'
+  }
+
   modalMask.style.display = 'block'
   modalBox.style.display = 'block'
 }
@@ -93,6 +121,8 @@ function hideModal(){
 
 if(modalMask) modalMask.addEventListener('click', hideModal)
 if(modalOk) modalOk.addEventListener('click', hideModal)
+if(modalCancel) modalCancel.addEventListener('click', hideModal)
+if(modalClose) modalClose.addEventListener('click', hideModal)
 
 
 
@@ -277,7 +307,7 @@ function getForcedCard(){
 async function downloadPNG(){
   const name = normalizeText(nameInput.value)
   if(!name){
-    showModal('还差一步', '先填一个昵称，再抽取自由卡。')
+    showModal('还差一步', '先填一个昵称，再抽取自由卡。', { type:'info', okText:'去填写昵称' })
     nameInput.focus()
     return
   }
@@ -306,17 +336,17 @@ async function downloadPNG(){
     if (res?.alreadyClaimed) {
       if (res.reason === 'device') {
         setStatus('你已在本设备领取过：已为你重新生成并下载同一张卡（编号不变）。', 'warn')
-        showModal('你已领取过', '本设备已领取过自由卡，本次将为你重新生成并下载同一张卡（编号不变）。')
+        showModal('你已领取过', '本设备已领取过自由卡，本次将为你重新生成并下载同一张卡（编号不变）。', { type:'warn', okText:'重新下载' })
       } else if (res.reason === 'phone') {
         setStatus('该手机号已领取过：已为你找回并重新生成下载（编号不变）。', 'warn')
-        showModal('已为你找回', '该手机号已领取过自由卡，本次将为你找回并重新生成下载（编号不变）。')
+        showModal('已为你找回', '该手机号已领取过自由卡，本次将为你找回并重新生成下载（编号不变）。', { type:'warn', okText:'找回并下载' })
       } else {
         setStatus('你已领取过：已为你重新生成下载（编号不变）。', 'warn')
         showModal('你已领取过', '本次将为你重新生成并下载同一张卡（编号不变）。')
       }
     } else {
       setStatus('领取成功！正在生成图片…', 'ok')
-      showModal('领取成功', '正在为你生成图片，请稍等…')
+      showModal('领取成功', '正在为你生成图片，请稍等…', { type:'ok', okText:'好的' })
     }
 
     // Update preview to the assigned card
@@ -369,7 +399,7 @@ async function downloadPNG(){
       setTimeout(()=>URL.revokeObjectURL(url), 3000)
 
       setStatus('下载已开始（如被浏览器拦截，请允许下载）。', 'ok')
-      showModal('已开始下载', '如果浏览器拦截了下载，请选择“允许”。')
+      showModal('已开始下载', '如果浏览器拦截了下载，请选择“允许”。', { type:'ok', okText:'知道了' })
     }, 'image/png')
 
   } catch(e){
