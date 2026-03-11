@@ -25,14 +25,12 @@ const btnNoLeft = byId('btnNoLeft')
 const btnNoRight = byId('btnNoRight')
 const btnNoStep = byId('btnNoStep')
 
-const nameText = byId('nameText')
-const noText = byId('noText')
-const posterImg = byId('posterImg')
 const shareCard = byId('shareCard')
 const closedState = byId('closedState')
 const openState = byId('openState')
+const previewImg = byId('previewImg')
 
-// export (unscaled) target
+// export (unscaled) target (single source of truth)
 const exportCard = byId('exportCard')
 const exportPosterImg = byId('exportPosterImg')
 const exportNameText = byId('exportNameText')
@@ -44,18 +42,13 @@ function normalizeText(s){
 
 function setNameTextOnly(){
   const name = normalizeText(nameInput.value) || '章人丹'
-  nameText.textContent = name
   if (exportNameText) exportNameText.textContent = name
 }
 
-function autoFitName(nameEl, basePx){
-  const name = nameEl.textContent || ''
-  const len = name.length
-  let scale = 1
-  if (len >= 10) scale = 0.70
-  else if (len >= 8) scale = 0.78
-  else if (len >= 6) scale = 0.86
-  nameEl.style.fontSize = Math.round(basePx * scale) + 'px'
+function fontFromCalibH(hNatural, sy){
+  // In calib.html we stored h ≈ fontSize * 1.2 (in export px) then converted to natural via /sy.
+  // So here: fontPx ≈ (hNatural * sy) / 1.2
+  return Math.round((hNatural * sy) / 1.2)
 }
 
 function getTurnstileToken(){
@@ -112,11 +105,11 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   noEl.style.left   = Math.round(noLeft) + 'px'
   noEl.style.top    = Math.round(noTop + GLOBAL_NO_Y) + 'px'
 
-  // font sizes derived from calibrated heights (trust h)
-  const nameBase = Math.max(14, Math.min(90, Math.round((nb.h || 420) * sy * 0.85)))
-  const noBase = Math.max(12, Math.min(60, Math.round((xb.h || 200) * sy * 0.85)))
-  autoFitName(nameEl, nameBase)
-  noEl.style.fontSize = noBase + 'px'
+  // font sizes: strictly follow calibrated heights
+  const nameFont = Math.max(10, Math.min(120, fontFromCalibH(nb.h || 420, sy)))
+  const noFont = Math.max(10, Math.min(80, fontFromCalibH(xb.h || 200, sy)))
+  nameEl.style.fontSize = nameFont + 'px'
+  noEl.style.fontSize = noFont + 'px'
 
   nameEl.style.display = 'block'
   noEl.style.display = 'block'
@@ -128,9 +121,7 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
 
 function applyOverlayLayout(cardTypeId){
   currentCardTypeId = Number(cardTypeId) || currentCardTypeId
-  // preview card (may be inside transforms)
-  applyOverlayLayoutTo(cardTypeId, posterImg, nameText, noText, shareCard)
-  // export card (never transformed)
+  // Only apply layout to exportCard (single source of truth)
   if (exportCard && exportPosterImg) {
     applyOverlayLayoutTo(cardTypeId, exportPosterImg, exportNameText, exportNoText, exportCard)
   }
@@ -213,38 +204,31 @@ async function downloadPNG(){
     const res = await claimCard(name)
 
     // Update preview to the assigned card
-    // Update preview
-    posterImg.src = res.image
-    nameText.textContent = res.name
-    noText.textContent = res.cardNoDisplay || `（编号${res.cardNo}）`
-
-    // Update export target (unscaled)
+    // Update export target (single source of truth)
     if (exportPosterImg) exportPosterImg.src = res.image
     if (exportNameText) exportNameText.textContent = res.name
     if (exportNoText) exportNoText.textContent = res.cardNoDisplay || `（编号${res.cardNo}）`
 
-    // Ensure configs loaded + images loaded, then apply per-card layout
     await loadCardConfigs().catch(()=>{})
-    await ensureImageLoaded(posterImg)
     if (exportPosterImg) await ensureImageLoaded(exportPosterImg)
     applyOverlayLayout(res.cardTypeId)
 
-    // Reveal animation: start opening the box first, then show the card
-    shareCard.classList.add('revealing')
-    await new Promise(r=>setTimeout(r, 220))
-    openState.style.display = 'block'
-
-    // wait for animation to finish before capturing
-    await new Promise(r=>setTimeout(r, 900))
-
-    const target = exportCard || shareCard
-    const canvas = await html2canvas(target, {
+    // Render exportCard to canvas once, then:
+    // 1) show preview as dataURL
+    // 2) download from same canvas => preview == saved
+    const canvas = await html2canvas(exportCard, {
       backgroundColor: null,
       scale: 2,
       useCORS: true,
       allowTaint: true,
       logging: false,
     })
+
+    if (previewImg) {
+      try { previewImg.src = canvas.toDataURL('image/png') } catch {}
+      if (closedState) closedState.style.display = 'none'
+      if (openState) openState.style.display = 'block'
+    }
 
     canvas.toBlob((blob)=>{
       if(!blob){
@@ -288,7 +272,6 @@ async function copyCopyText(){
 
 nameInput.addEventListener('input', ()=>{
   setNameTextOnly()
-  // if we already have a layout applied, keep current font size (do not override here)
 })
 btnDownload.addEventListener('click', downloadPNG)
 btnCopy.addEventListener('click', copyCopyText)
