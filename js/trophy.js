@@ -27,6 +27,12 @@ const shareCard = byId('shareCard')
 const closedState = byId('closedState')
 const openState = byId('openState')
 
+// export (unscaled) target
+const exportCard = byId('exportCard')
+const exportPosterImg = byId('exportPosterImg')
+const exportNameText = byId('exportNameText')
+const exportNoText = byId('exportNoText')
+
 function normalizeText(s){
   return (s ?? '').toString().trim().slice(0, 16)
 }
@@ -61,20 +67,15 @@ async function loadCardConfigs(){
 
 let currentCardTypeId = 1
 
-function applyOverlayLayout(cardTypeId){
+function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   if (!cardConfigs) return
   const cfg = cardConfigs[String(cardTypeId)]
   if (!cfg?.nameBox || !cfg?.noBox) return
-  currentCardTypeId = Number(cardTypeId) || currentCardTypeId
 
-  // ensure visible
-  nameText.style.display = 'block'
-  noText.style.display = 'block'
-
-  const iw = posterImg.naturalWidth || 1
-  const ih = posterImg.naturalHeight || 1
-  const cw = shareCard.clientWidth || 1
-  const ch = shareCard.clientHeight || 1
+  const iw = imgEl.naturalWidth || 1
+  const ih = imgEl.naturalHeight || 1
+  const cw = cardEl.clientWidth || 1
+  const ch = cardEl.clientHeight || 1
 
   const sx = cw / iw
   const sy = ch / ih
@@ -82,36 +83,48 @@ function applyOverlayLayout(cardTypeId){
   const nb = cfg.nameBox
   const xb = cfg.noBox
 
+  // position: allow negative (as calibrated) BUT keep within a small safe range to avoid full disappearance
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+  const safeMinX = -40
+  const safeMinY = -40
 
-  // Raw positions (can be negative in calibrated data)
   let nameLeft = nb.x * sx
   let nameTop  = nb.y * sy
   let noLeft   = xb.x * sx
   let noTop    = xb.y * sy
 
-  // Clamp into visible canvas
-  nameLeft = clamp(nameLeft, 0, cw - 10)
-  nameTop  = clamp(nameTop, 0, ch - 10)
-  noLeft   = clamp(noLeft, 0, cw - 10)
-  noTop    = clamp(noTop, 0, ch - 10)
+  nameLeft = clamp(nameLeft, safeMinX, cw - 10)
+  nameTop  = clamp(nameTop, safeMinY, ch - 10)
+  noLeft   = clamp(noLeft, safeMinX, cw - 10)
+  noTop    = clamp(noTop, safeMinY, ch - 10)
 
-  nameText.style.left = Math.round(nameLeft) + 'px'
-  nameText.style.top  = Math.round(nameTop) + 'px'
-  noText.style.left   = Math.round(noLeft) + 'px'
-  noText.style.top    = Math.round(noTop) + 'px'
+  nameEl.style.left = Math.round(nameLeft) + 'px'
+  nameEl.style.top  = Math.round(nameTop) + 'px'
+  noEl.style.left   = Math.round(noLeft) + 'px'
+  noEl.style.top    = Math.round(noTop) + 'px'
 
-  // Font sizing from box height
-  const nameSize = Math.max(16, Math.min(72, Math.round((nb.h || 420) * sy * 0.55)))
+  // font sizes derived from calibrated heights
+  const nameSize = Math.max(14, Math.min(72, Math.round((nb.h || 420) * sy * 0.55)))
   const noSize = Math.max(12, Math.min(40, Math.round((xb.h || 200) * sy * 0.34)))
-  nameText.style.fontSize = nameSize + 'px'
-  noText.style.fontSize = noSize + 'px'
+  nameEl.style.fontSize = nameSize + 'px'
+  noEl.style.fontSize = noSize + 'px'
 
-  // Force visible
-  nameText.style.visibility = 'visible'
-  noText.style.visibility = 'visible'
-  nameText.style.opacity = '1'
-  noText.style.opacity = '1'
+  nameEl.style.display = 'block'
+  noEl.style.display = 'block'
+  nameEl.style.visibility = 'visible'
+  noEl.style.visibility = 'visible'
+  nameEl.style.opacity = '1'
+  noEl.style.opacity = '1'
+}
+
+function applyOverlayLayout(cardTypeId){
+  currentCardTypeId = Number(cardTypeId) || currentCardTypeId
+  // preview card (may be inside transforms)
+  applyOverlayLayoutTo(cardTypeId, posterImg, nameText, noText, shareCard)
+  // export card (never transformed)
+  if (exportCard && exportPosterImg) {
+    applyOverlayLayoutTo(cardTypeId, exportPosterImg, exportNameText, exportNoText, exportCard)
+  }
 }
 
 async function claimCard(name){
@@ -177,13 +190,20 @@ async function downloadPNG(){
     const res = await claimCard(name)
 
     // Update preview to the assigned card
+    // Update preview
     posterImg.src = res.image
     nameText.textContent = res.name
     noText.textContent = res.cardNoDisplay || `（编号${res.cardNo}）`
 
-    // Ensure configs loaded + image loaded, then apply per-card layout
+    // Update export target (unscaled)
+    if (exportPosterImg) exportPosterImg.src = res.image
+    if (exportNameText) exportNameText.textContent = res.name
+    if (exportNoText) exportNoText.textContent = res.cardNoDisplay || `（编号${res.cardNo}）`
+
+    // Ensure configs loaded + images loaded, then apply per-card layout
     await loadCardConfigs().catch(()=>{})
     await ensureImageLoaded(posterImg)
+    if (exportPosterImg) await ensureImageLoaded(exportPosterImg)
     applyOverlayLayout(res.cardTypeId)
 
     // Reveal animation: start opening the box first, then show the card
@@ -194,7 +214,8 @@ async function downloadPNG(){
     // wait for animation to finish before capturing
     await new Promise(r=>setTimeout(r, 900))
 
-    const canvas = await html2canvas(shareCard, {
+    const target = exportCard || shareCard
+    const canvas = await html2canvas(target, {
       backgroundColor: null,
       scale: 2,
       useCORS: true,

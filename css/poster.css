@@ -16,6 +16,16 @@
   box-shadow: 0 30px 80px rgba(0,0,0,.35);
 }
 
+/* hidden export target */
+.exportHidden{
+  position: fixed;
+  left: -99999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .openState{
   position:absolute;
   inset:0;
