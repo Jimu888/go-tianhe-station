@@ -42,14 +42,6 @@
                 </div>
               </div>
 
-              <!-- Hidden export card (NOT scaled by preview transforms) -->
-              <div class="exportHidden" aria-hidden="true">
-                <div class="shareCard" id="exportCard">
-                  <img class="posterImg" id="exportPosterImg" src="./assets/cards/1.jpg" alt="card" />
-                  <div class="nameOverlay" id="exportNameText">章人丹</div>
-                  <div class="noOverlay" id="exportNoText">（编号#00001）</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -83,7 +75,7 @@
           </div>
 
           <div class="btnrow" style="margin-top:14px;">
-            <button class="btn" id="btnDownload" type="button">保存卡片</button>
+            <button class="btn" id="btnDownload" type="button">抽取卡片并保存</button>
           </div>
 
           <!-- Calibration panel (only shown when ?calib=1) -->
@@ -126,6 +118,15 @@
 
   </div>
 
-  <script src="./js/trophy.js?v=5dd27ef"></script>
+  <!-- Hidden export card (NOT scaled) -->
+  <div class="exportHidden" aria-hidden="true">
+    <div class="shareCard" id="exportCard">
+      <img class="posterImg" id="exportPosterImg" src="./assets/cards/1.jpg" alt="card" />
+      <div class="nameOverlay" id="exportNameText">章人丹</div>
+      <div class="noOverlay" id="exportNoText">（编号#00001）</div>
+    </div>
+  </div>
+
+  <script src="./js/trophy.js?v=179eb73"></script>
 </body>
 </html>

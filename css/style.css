@@ -154,6 +154,7 @@ a{color:inherit; text-decoration:none}
   grid-template-columns: 540px 420px; /* 左预览固定宽，右侧卡片更小 */
   gap:22px;
   align-items:start;
+  justify-content: center; /* overall centered */
   margin-bottom:24px;
 }
 

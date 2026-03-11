@@ -185,7 +185,7 @@ async function downloadPNG(){
   }
 
   btnDownload.disabled = true
-  btnDownload.textContent = '开启中...'
+  btnDownload.textContent = '抽取中...'
 
   try{
     const res = await claimCard(name)
@@ -246,7 +246,7 @@ async function downloadPNG(){
     alert('领取失败：' + (e?.message || 'unknown'))
   } finally {
     btnDownload.disabled = false
-    btnDownload.textContent = '保存卡片'
+    btnDownload.textContent = '抽取卡片并保存'
   }
 }
 
