@@ -562,3 +562,8 @@ try{
 } catch {}
 
 setupCalibMode()
+
+// show test utilities in test mode
+try{
+  if (isTestMode() && testPanel) testPanel.style.display = 'block'
+} catch {}
