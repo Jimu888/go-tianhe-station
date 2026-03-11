@@ -2,8 +2,9 @@ function byId(id){return document.getElementById(id)}
 
 const nameInput = byId('nameInput')
 const btnDownload = byId('btnDownload')
-const btnCopy = byId('btnCopy')
-const copyText = byId('copyText')
+const phoneInput = byId('phoneInput')
+const codeInput = byId('codeInput')
+const btnSendCode = byId('btnSendCode')
 const calibPanel = byId('calibPanel')
 const btnCalibCopy = byId('btnCalibCopy')
 const btnCalibDownload = byId('btnCalibDownload')
@@ -52,10 +53,12 @@ function fontFromCalibH(hNatural, sy){
   return Math.round((hNatural * sy) / 1.2)
 }
 
-function getTurnstileToken(){
-  // Turnstile puts token into a hidden input named 'cf-turnstile-response'
-  const el = document.querySelector('input[name="cf-turnstile-response"]')
-  return (el && el.value) ? el.value : ''
+function normalizePhone(s){
+  return (s ?? '').toString().replace(/\s+/g,'').trim()
+}
+
+function normalizeCode(s){
+  return (s ?? '').toString().replace(/\s+/g,'').trim()
 }
 
 let cardConfigs = null
@@ -152,12 +155,14 @@ function applyOverlayLayout(cardTypeId){
 }
 
 async function claimCard(name){
-  const cfTurnstileToken = getTurnstileToken()
+  const phone = normalizePhone(phoneInput?.value)
+  const code  = normalizeCode(codeInput?.value)
+
   const qs = isTestMode() ? `?test=1${getForcedCard()?`&card=${encodeURIComponent(getForcedCard())}`:''}` : ''
   const r = await fetch('/api/claim' + qs, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, cfTurnstileToken }),
+    body: JSON.stringify({ name, phone, code }),
   })
 
   const text = await r.text()
@@ -172,7 +177,7 @@ async function claimTestCard(name, cardTypeId){
   const r = await fetch(`/api/claim?test=1&card=${encodeURIComponent(cardTypeId)}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, cfTurnstileToken: '' }),
+    body: JSON.stringify({ name, phone: '', code: '' }),
   })
   const text = await r.text()
   let data
@@ -220,10 +225,19 @@ async function downloadPNG(){
     return
   }
 
-  // must have turnstile token (skip in test mode)
-  if (!isTestMode() && !getTurnstileToken()) {
-    alert('请先完成验证（人机校验）')
-    return
+  if (!isTestMode()) {
+    const phone = normalizePhone(phoneInput?.value)
+    const code  = normalizeCode(codeInput?.value)
+    if (!/^1\d{10}$/.test(phone || '')) {
+      alert('请输入正确的11位手机号')
+      phoneInput?.focus()
+      return
+    }
+    if (!/^\d{6}$/.test(code || '')) {
+      alert('请输入6位验证码')
+      codeInput?.focus()
+      return
+    }
   }
 
   btnDownload.disabled = true
@@ -305,7 +319,50 @@ async function copyCopyText(){
 nameInput.addEventListener('input', ()=>{
   setNameTextOnly()
 })
+async function sendSMSCode(){
+  const phone = normalizePhone(phoneInput?.value)
+  if (!/^1\d{10}$/.test(phone || '')) {
+    alert('请输入正确的11位手机号')
+    phoneInput?.focus()
+    return
+  }
+
+  btnSendCode.disabled = true
+  const oldText = btnSendCode.textContent
+  btnSendCode.textContent = '发送中...'
+
+  try {
+    const r = await fetch('/api/sms/send' + (isTestMode() ? '?test=1' : ''), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    })
+    const text = await r.text()
+    let data
+    try { data = JSON.parse(text) } catch { data = null }
+    if (!data?.ok) throw new Error(data?.error || '发送失败')
+
+    let left = 60
+    btnSendCode.textContent = `${left}s`
+    const timer = setInterval(()=>{
+      left -= 1
+      if (left <= 0) {
+        clearInterval(timer)
+        btnSendCode.disabled = false
+        btnSendCode.textContent = '发送验证码'
+      } else {
+        btnSendCode.textContent = `${left}s`
+      }
+    }, 1000)
+  } catch (e) {
+    btnSendCode.disabled = false
+    btnSendCode.textContent = oldText
+    alert(String(e?.message || e))
+  }
+}
+
 btnDownload.addEventListener('click', downloadPNG)
+if (btnSendCode) btnSendCode.addEventListener('click', sendSMSCode)
 btnCopy.addEventListener('click', copyCopyText)
 
 async function exportAll12(){

@@ -3,17 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>自由卡领取</title>
+  <title>成都GO地铁-自由卡</title>
   <link rel="stylesheet" href="./css/style.css" />
   <link rel="stylesheet" href="./css/poster.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.0.19/400.css" />
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <meta name="referrer" content="no-referrer" />
 </head>
 <body>
   <div class="container">
+    <div style="text-align:center; margin: 18px 0 14px;">
+      <div style="font-weight:900; font-size:26px; letter-spacing:.5px;">天河路地铁站</div>
+      <div class="sub" style="margin-top:6px; opacity:.78;">通往自由的传送门</div>
+    </div>
+
     <div class="hero">
       <!-- 左侧：预览 -->
       <div class="card pad" id="export">
@@ -33,7 +37,7 @@
                   </div>
                   <div class="closedText">
                     <div class="closedTitle">自由卡卡盒</div>
-                    <div class="closedSub">输入名字，点击「保存卡片」开启抽卡<br/><span style="opacity:.7; font-size:12px;">测试模式：在网址后加 ?test=1&card=1..12</span></div>
+                    <div class="closedSub">本期自由卡已开放。<br/>常规款 / 隐藏款随机掉落<br/><span style="opacity:.7; font-size:12px;">测试模式：在网址后加 ?test=1&card=1..12</span></div>
                   </div>
                 </div>
 
@@ -54,7 +58,7 @@
         <!-- 卡片1：输入名字 -->
         <div class="card pad">
           <h1 class="h1" style="font-size:24px; margin:0 0 8px;">领取你的自由卡</h1>
-          <p class="sub" style="margin:0 0 10px;">只填名字。系统会随机分配卡面（含限量/不限量），并生成卡牌编号。</p>
+          <p class="sub" style="margin:0 0 10px;">留下你的昵称，就能申领一张专属于你的天河站自由卡！<br/>每一张都拥有独立且唯一编号，限量卡将解锁专属小幸运权益！</p>
 
           <div class="field" style="margin-top:10px;">
             <label>昵称</label>
@@ -64,15 +68,19 @@
 
         <!-- 卡片2：文案参考 + 人机校验 + 保存按钮（保存按钮放这里下面） -->
         <div class="card pad">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-            <h2 style="margin:0; font-size:16px; letter-spacing:.2px;">文案参考</h2>
-            <button class="btn secondary" id="btnCopy" type="button" style="padding:10px 12px;">复制</button>
+          <div class="field" style="margin-top:10px;">
+            <label>手机号</label>
+            <input id="phoneInput" type="tel" placeholder="11位手机号" maxlength="11" inputmode="numeric" />
           </div>
-          <textarea id="copyText" rows="5" style="margin-top:10px; resize:none;">世界很大，别把自己困在一站。
-天河路站 · The Portal to Freedom.
-通往「自由」的传送门。</textarea>
-          <div style="margin-top:12px;">
-            <div class="cf-turnstile" data-sitekey="0x4AAAAAACpFsB4Kr7ny-pF4" data-theme="dark"></div>
+
+          <div style="margin-top:10px; display:grid; grid-template-columns: 1fr 140px; gap:10px;">
+            <div class="field" style="margin:0;">
+              <label>验证码</label>
+              <input id="codeInput" type="tel" placeholder="6位验证码" maxlength="6" inputmode="numeric" />
+            </div>
+            <div style="display:flex; flex-direction:column; justify-content:flex-end;">
+              <button class="btn secondary" id="btnSendCode" type="button" style="height:42px;">发送验证码</button>
+            </div>
           </div>
 
           <div class="btnrow" style="margin-top:14px;">
