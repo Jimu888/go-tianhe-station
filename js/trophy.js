@@ -74,7 +74,8 @@ function applyOverlayLayout(cardTypeId){
 
 async function claimCard(name){
   const cfTurnstileToken = getTurnstileToken()
-  const r = await fetch('/api/claim', {
+  const qs = isTestMode() ? `?test=1${getForcedCard()?`&card=${encodeURIComponent(getForcedCard())}`:''}` : ''
+  const r = await fetch('/api/claim' + qs, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ name, cfTurnstileToken }),
@@ -98,6 +99,16 @@ async function ensureImageLoaded(imgEl){
   })
 }
 
+function isTestMode(){
+  const u = new URL(location.href)
+  return u.searchParams.get('test') === '1'
+}
+
+function getForcedCard(){
+  const u = new URL(location.href)
+  return u.searchParams.get('card') || u.searchParams.get('cardTypeId') || ''
+}
+
 async function downloadPNG(){
   const name = normalizeText(nameInput.value)
   if(!name){
@@ -106,8 +117,8 @@ async function downloadPNG(){
     return
   }
 
-  // must have turnstile token
-  if (!getTurnstileToken()) {
+  // must have turnstile token (skip in test mode)
+  if (!isTestMode() && !getTurnstileToken()) {
     alert('请先完成验证（人机校验）')
     return
   }
