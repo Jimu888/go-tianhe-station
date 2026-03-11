@@ -67,6 +67,10 @@ function applyOverlayLayout(cardTypeId){
   if (!cfg?.nameBox || !cfg?.noBox) return
   currentCardTypeId = Number(cardTypeId) || currentCardTypeId
 
+  // ensure visible
+  nameText.style.display = 'block'
+  noText.style.display = 'block'
+
   const iw = posterImg.naturalWidth || 1
   const ih = posterImg.naturalHeight || 1
   const cw = shareCard.clientWidth || 1
@@ -237,10 +241,12 @@ function setXY(el, left, top){
 
 function makeDraggable(el){
   let start = null
+
+  // Pointer Events (preferred)
   el.addEventListener('pointerdown', (e)=>{
     if (!isCalibMode()) return
     e.preventDefault()
-    el.setPointerCapture(e.pointerId)
+    el.setPointerCapture?.(e.pointerId)
     const xy = getXY(el)
     start = { x: e.clientX, y: e.clientY, left: xy.left, top: xy.top }
   })
@@ -254,6 +260,27 @@ function makeDraggable(el){
   const end = ()=>{ start = null }
   el.addEventListener('pointerup', end)
   el.addEventListener('pointercancel', end)
+
+  // Mouse fallback (some embedded browsers behave oddly with pointer capture)
+  el.addEventListener('mousedown', (e)=>{
+    if (!isCalibMode()) return
+    e.preventDefault()
+    const xy = getXY(el)
+    start = { x: e.clientX, y: e.clientY, left: xy.left, top: xy.top }
+    const onMove = (ev)=>{
+      if (!start) return
+      const dx = ev.clientX - start.x
+      const dy = ev.clientY - start.y
+      setXY(el, start.left + dx, start.top + dy)
+    }
+    const onUp = ()=>{
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      start = null
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  })
 }
 
 function calibToConfig(){
@@ -335,6 +362,13 @@ function bindNudgeButtons(){
 function setupCalibMode(){
   bindNudgeButtons()
   if (!isCalibMode()) return
+
+  // visual indicator
+  document.documentElement.setAttribute('data-calib','1')
+  const tip = document.createElement('div')
+  tip.textContent = '校准模式已开启（可拖动/按钮微调）'
+  tip.style.cssText = 'position:fixed;left:12px;top:12px;z-index:9999;padding:8px 12px;border-radius:12px;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);color:rgba(255,255,255,.9);font-size:12px;border:1px solid rgba(255,255,255,.14)'
+  document.body.appendChild(tip)
   // show open state directly
   try{ closedState.style.display = 'none'; openState.style.display = 'block' } catch {}
   shareCard.classList.add('calib')

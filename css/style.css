@@ -468,7 +468,6 @@ input[type="text"]:focus, textarea:focus, select:focus{
   overflow: hidden;
   border-radius: 20px;
 
-  /* center poster horizontally inside the card */
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -478,6 +477,16 @@ input[type="text"]:focus, textarea:focus, select:focus{
   width: 540px;
   height: 1080px;
   transform: scale(.55);
+  transform-origin: top center;
+}
+
+/* Calibration: make preview bigger and scrollable for precise placement */
+html[data-calib="1"] .previewBox{
+  height: 860px;
+  overflow: auto;
+}
+html[data-calib="1"] .previewInner{
+  transform: scale(.80);
   transform-origin: top center;
 }
 
