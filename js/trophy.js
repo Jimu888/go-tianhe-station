@@ -104,7 +104,9 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   nameEl.style.left = Math.round(nameLeft + NAME_NUDGE_X) + 'px'
   nameEl.style.top  = Math.round(nameTop) + 'px'
   noEl.style.left   = Math.round(noLeft) + 'px'
-  noEl.style.top    = Math.round(noTop) + 'px'
+  // global nudge for number
+  const NO_NUDGE_Y = 20
+  noEl.style.top    = Math.round(noTop + NO_NUDGE_Y) + 'px'
 
   // font sizes derived from calibrated heights (trust h)
   const nameBase = Math.max(14, Math.min(90, Math.round((nb.h || 420) * sy * 0.85)))
