@@ -17,20 +17,9 @@ function json(data, init = {}) {
 }
 
 async function ensureSchema(db) {
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS meta (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      next_no INTEGER NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS limited (
-      card_type INTEGER PRIMARY KEY,
-      remaining INTEGER NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS ip_rate (
-      ip TEXT PRIMARY KEY,
-      last_ms INTEGER NOT NULL
-    );
-  `)
+  await db.exec('CREATE TABLE IF NOT EXISTS meta (id INTEGER PRIMARY KEY, next_no INTEGER NOT NULL);')
+  await db.exec('CREATE TABLE IF NOT EXISTS limited (card_type INTEGER PRIMARY KEY, remaining INTEGER NOT NULL);')
+  await db.exec('CREATE TABLE IF NOT EXISTS ip_rate (ip TEXT PRIMARY KEY, last_ms INTEGER NOT NULL);')
 
   await db.prepare('INSERT INTO meta (id, next_no) VALUES (1, 1) ON CONFLICT(id) DO NOTHING;').run()
 
