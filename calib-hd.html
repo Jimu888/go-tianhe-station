@@ -3,79 +3,92 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>自由卡校准（HD 1080×2160）</title>
+  <title>自由卡校准（同主站渲染）</title>
+  <link rel="stylesheet" href="./css/poster.css" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
-    :root{--bg:#070c16;--card:rgba(255,255,255,.08);--stroke:rgba(255,255,255,.14);--text:rgba(255,255,255,.9)}
+    :root{--bg:#070c16;--card:rgba(255,255,255,.08);--stroke:rgba(255,255,255,.14);--text:rgba(255,255,255,.92)}
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans SC","Microsoft YaHei",sans-serif;color:var(--text);
       background:radial-gradient(1100px 700px at 20% 10%, rgba(159,214,255,.10), transparent 62%),
       linear-gradient(135deg,#080d18 0%,#0e1a30 55%,#070c16 100%);
       min-height:100vh;}
-    .wrap{max-width:1280px;margin:0 auto;padding:18px 16px 40px;display:grid;grid-template-columns: 740px 1fr;gap:16px;align-items:start}
+    .wrap{max-width:1400px;margin:0 auto;padding:16px;display:grid;grid-template-columns: 1fr 420px;gap:14px;align-items:start}
     @media (max-width: 980px){.wrap{grid-template-columns:1fr}}
-    .card{background:var(--card);border:1px solid var(--stroke);border-radius:18px;backdrop-filter:blur(16px);box-shadow:0 18px 60px rgba(0,0,0,.35);overflow:hidden}
-    .pad{padding:16px}
-    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+    .glass{background:var(--card);border:1px solid var(--stroke);border-radius:16px;backdrop-filter:blur(16px);box-shadow:0 18px 60px rgba(0,0,0,.35)}
+    .pad{padding:14px}
     .title{font-weight:900;letter-spacing:.2px}
-    .muted{opacity:.72;font-size:12px;line-height:1.35}
-
-    /* HD stage */
-    .stage{position:relative;width:1080px;height:2160px;border-radius:0;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.35)}
-    .viewport{width:100%;height:calc(100vh - 170px);min-height:720px;overflow:auto;display:flex;justify-content:flex-start;align-items:flex-start;padding:10px}
-    .inner{transform:scale(0.55);transform-origin:top left}
-
-    img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
-
-    .overlay{position:absolute;z-index:50;cursor:move;user-select:none;
-      padding:0;border-radius:0;background:transparent;outline:2px dashed rgba(159,214,255,.65);outline-offset:8px;
-      -webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;white-space:nowrap;touch-action:none;line-height:1;}
-
-    /* Spec: PingFang + #979595 (Regular) */
-    .name{font-weight:400;font-size:108px;letter-spacing:.5px;color:#979595;text-shadow:none;
-      font-family:"PingFang SC","PingFangSC-Regular","PingFang SC Regular",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans SC","Microsoft YaHei",sans-serif}
-    .no{font-weight:400;font-size:48px;letter-spacing:.2px;color:#979595;text-shadow:none;
-      font-family:"PingFang SC","PingFangSC-Regular","PingFang SC Regular",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans SC","Microsoft YaHei",sans-serif}
-
-    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .sub{opacity:.72;font-size:12px;line-height:1.35}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
     select,input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.25);color:var(--text);outline:none}
     .btn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:var(--text);border-radius:12px;padding:10px 12px;cursor:pointer}
     .btn.primary{background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(209,233,255,.88));color:rgba(10,14,24,.96)}
-
-    .grid{display:grid;grid-template-columns: 44px 44px 44px;gap:8px;justify-content:start}
-    .k{padding:10px}
     code{display:block;white-space:pre-wrap;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:10px;font-size:12px;line-height:1.35}
+
+    .cols{display:grid;grid-template-columns: 1fr 1fr;gap:14px}
+    @media (max-width: 1100px){.cols{grid-template-columns:1fr}}
+
+    .viewport{width:100%;height:calc(100vh - 180px);min-height:680px;overflow:auto;padding:12px;display:flex;justify-content:center;align-items:flex-start}
+    .zoomWrap{transform:scale(var(--zoom, .5));transform-origin:top center}
+
+    /* Make overlays draggable in calib page (main site has cursor default) */
+    #exportNameText,#exportNoText{cursor:move;user-select:none;touch-action:none}
+
+    .kgrid{display:grid;grid-template-columns:44px 44px 44px;gap:8px;justify-content:start}
+    .k{padding:10px}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card pad">
-      <div class="topbar">
+    <div class="glass pad">
+      <div class="row" style="justify-content:space-between;align-items:flex-end">
         <div>
-          <div class="title">自由卡校准（HD 1080×2160）</div>
-          <div class="muted">拖动名字/编号；或用按钮微调。Alt=调编号；Shift=10px。复制 JSON 或下载合并 cards.json。</div>
+          <div class="title">自由卡校准（同主站渲染）</div>
+          <div class="sub">这页直接复用主站的 exportCard DOM + poster.css，并用 html2canvas 渲染预览图。你对齐右侧“渲染预览图”，导出就会 1:1 命中。</div>
         </div>
-        <div style="min-width:260px;">
-          <div class="muted" style="margin-bottom:6px;">缩放（只影响显示，不影响输出）</div>
-          <input id="zoom" type="range" min="0.30" max="1" step="0.01" value="0.55" />
+        <div style="min-width:260px">
+          <div class="sub" style="margin-bottom:6px">缩放（只影响操作视图）</div>
+          <input id="zoom" type="range" min="0.25" max="1" step="0.01" value="0.50" />
         </div>
       </div>
 
-      <div class="viewport card">
-        <div class="inner">
-          <div class="stage" id="stage">
-            <img id="img" src="/assets/cards/1.jpg?v=hd" alt="card" />
-            <div class="overlay name" id="name">章人丹</div>
-            <div class="overlay no" id="no">（编号#00001）</div>
+      <div class="cols" style="margin-top:12px">
+        <div class="glass" style="overflow:hidden">
+          <div class="pad" style="padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.10)">
+            <div style="font-weight:800">操作视图（DOM）</div>
+            <div class="sub">拖动名字/编号；方向键微调（Shift=10px，Alt=编号）。</div>
+          </div>
+          <div class="viewport">
+            <div class="zoomWrap" id="zoomWrap">
+              <div class="shareCard" id="exportCard">
+                <img class="posterImg" id="exportPosterImg" src="./assets/cards/1.jpg" alt="card" />
+                <div class="nameOverlay" id="exportNameText">章人丹</div>
+                <div class="noOverlay" id="exportNoText">（编号#00001）</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass" style="overflow:hidden">
+          <div class="pad" style="padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.10)">
+            <div style="font-weight:800">渲染预览图（html2canvas）</div>
+            <div class="sub">你以这张图为准校准；它就是主站最终保存出来的样子。</div>
+          </div>
+          <div class="viewport" style="justify-content:center">
+            <div class="zoomWrap" style="transform:scale(var(--zoom, .5));transform-origin:top center">
+              <img id="rendered" alt="rendered" style="display:block;width:1080px;height:2160px;object-fit:cover" />
+            </div>
           </div>
         </div>
       </div>
+
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="card pad">
+      <div class="glass pad">
         <div class="row">
           <div style="flex:1">
-            <div class="muted">选择卡片</div>
+            <div class="sub">选择卡片</div>
             <select id="cardSel">
               <option value="1">卡 1</option><option value="2">卡 2</option><option value="3">卡 3</option><option value="4">卡 4</option>
               <option value="5">卡 5</option><option value="6">卡 6</option><option value="7">卡 7</option><option value="8">卡 8</option>
@@ -83,81 +96,81 @@
             </select>
           </div>
           <div style="flex:1">
-            <div class="muted">名字预览</div>
+            <div class="sub">名字预览</div>
             <input id="nameInput" value="章人丹" />
           </div>
         </div>
-        <div class="row" style="margin-top:12px">
+
+        <div class="row" style="margin-top:10px">
           <button class="btn" id="copyOne">复制当前卡 JSON</button>
           <button class="btn" id="downloadAll">下载 cards.json（合并）</button>
-          <button class="btn primary" id="reset">重置到默认</button>
+          <button class="btn primary" id="rerender">刷新渲染预览</button>
         </div>
       </div>
 
-      <div class="card pad">
+      <div class="glass pad">
+        <div class="sub" style="margin-bottom:8px">微调（方向按钮）</div>
         <div class="row" style="gap:16px">
           <div>
-            <div class="muted" style="margin-bottom:6px">调名字（位置/字号）</div>
-            <div class="row" style="margin:6px 0 10px; gap:8px">
+            <div class="sub" style="opacity:.75;margin-bottom:6px">名字</div>
+            <div class="kgrid">
+              <button class="btn k" data-t="name" data-dx="0" data-dy="-1">↑</button><div></div><button class="btn k" data-step="name">+10</button>
+              <button class="btn k" data-t="name" data-dx="-1" data-dy="0">←</button><button class="btn k" data-t="name" data-dx="0" data-dy="1">↓</button><button class="btn k" data-t="name" data-dx="1" data-dy="0">→</button>
+            </div>
+            <div class="row" style="margin-top:8px">
               <button class="btn k" data-fs="name" data-dfs="-1">A-</button>
               <button class="btn k" data-fs="name" data-dfs="1">A+</button>
-              <button class="btn k" data-fsstep="name">fs+1</button>
-            </div>
-            <div class="grid">
-              <button class="btn k" data-t="name" data-dx="0" data-dy="-1">↑</button><div></div><button class="btn k" data-step="name">+1</button>
-              <button class="btn k" data-t="name" data-dx="-1" data-dy="0">←</button><button class="btn k" data-t="name" data-dx="0" data-dy="1">↓</button><button class="btn k" data-t="name" data-dx="1" data-dy="0">→</button>
             </div>
           </div>
           <div>
-            <div class="muted" style="margin-bottom:6px">调编号（位置/字号）</div>
-            <div class="row" style="margin:6px 0 10px; gap:8px">
+            <div class="sub" style="opacity:.75;margin-bottom:6px">编号</div>
+            <div class="kgrid">
+              <button class="btn k" data-t="no" data-dx="0" data-dy="-1">↑</button><div></div><button class="btn k" data-step="no">+10</button>
+              <button class="btn k" data-t="no" data-dx="-1" data-dy="0">←</button><button class="btn k" data-t="no" data-dx="0" data-dy="1">↓</button><button class="btn k" data-t="no" data-dx="1" data-dy="0">→</button>
+            </div>
+            <div class="row" style="margin-top:8px">
               <button class="btn k" data-fs="no" data-dfs="-1">A-</button>
               <button class="btn k" data-fs="no" data-dfs="1">A+</button>
-              <button class="btn k" data-fsstep="no">fs+1</button>
-            </div>
-            <div class="grid">
-              <button class="btn k" data-t="no" data-dx="0" data-dy="-1">↑</button><div></div><button class="btn k" data-step="no">+1</button>
-              <button class="btn k" data-t="no" data-dx="-1" data-dy="0">←</button><button class="btn k" data-t="no" data-dx="0" data-dy="1">↓</button><button class="btn k" data-t="no" data-dx="1" data-dy="0">→</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="card pad">
-        <div class="muted" style="margin-bottom:8px">输出（发我这一段即可）</div>
+      <div class="glass pad">
+        <div class="sub" style="margin-bottom:8px">输出（发我这一段即可）</div>
         <code id="out">{}</code>
       </div>
+
     </div>
   </div>
 
 <script>
 (() => {
   const $ = (id)=>document.getElementById(id)
-  const img = $('img')
-  const nameEl = $('name')
-  const noEl = $('no')
+  const exportCard = $('exportCard')
+  const img = $('exportPosterImg')
+  const nameEl = $('exportNameText')
+  const noEl = $('exportNoText')
+  const rendered = $('rendered')
   const cardSel = $('cardSel')
   const nameInput = $('nameInput')
   const out = $('out')
   const zoomEl = $('zoom')
-  const inner = document.querySelector('.inner')
 
-  let ZOOM = 0.55
-  if (inner) inner.style.transform = `scale(${ZOOM})`
-  if (zoomEl) {
-    zoomEl.addEventListener('input', ()=>{
-      ZOOM = parseFloat(zoomEl.value || '0.55')
-      if (inner) inner.style.transform = `scale(${ZOOM})`
-    })
-  }
-
-  let step = { name: 1, no: 1 }
-  let fsStep = { name: 1, no: 1 }
+  let step = { name: 10, no: 10 }
   let allCfg = {}
 
   function px(n){ return Math.round(n) + 'px' }
-  function xy(el){ return { left: parseFloat(el.style.left||'80'), top: parseFloat(el.style.top||'1600') } }
+  function xy(el){ return { left: parseFloat(el.style.left||'0'), top: parseFloat(el.style.top||'0') } }
   function set(el, left, top){ el.style.left = px(left); el.style.top = px(top) }
+
+  // Zoom only affects interaction view; coordinates remain in 1080x2160 space.
+  let ZOOM = 0.5
+  document.documentElement.style.setProperty('--zoom', ZOOM)
+  zoomEl.addEventListener('input', ()=>{
+    ZOOM = parseFloat(zoomEl.value || '0.5')
+    document.documentElement.style.setProperty('--zoom', ZOOM)
+  })
 
   function dumpOne(cardId){
     const n = xy(nameEl), k = xy(noEl)
@@ -168,23 +181,31 @@
       no:   { left: Math.round(k.left), top: Math.round(k.top), font: Math.round(kfs) }
     }
     allCfg[String(cardId)] = cfg
+    out.textContent = JSON.stringify({ [String(cardId)]: cfg }, null, 2)
     return cfg
   }
 
-  function refreshOut(){
-    const id = Number(cardSel.value)
-    const one = dumpOne(id)
-    out.textContent = JSON.stringify({ [String(id)]: one }, null, 2)
+  let renderTimer = null
+  async function renderNow(){
+    // Important: html2canvas must see the card in DOM (it is visible here)
+    const canvas = await html2canvas(exportCard, { backgroundColor: null, scale: 1, useCORS: true, allowTaint: true, logging: false })
+    rendered.src = canvas.toDataURL('image/png')
+  }
+  function scheduleRender(){
+    clearTimeout(renderTimer)
+    renderTimer = setTimeout(()=>{ renderNow().catch(()=>{}) }, 120)
   }
 
   function loadCard(id){
-    img.src = `/assets/cards/${id}.jpg?v=${Date.now()}`
+    img.src = `./assets/cards/${id}.jpg?v=${Date.now()}`
     nameEl.textContent = nameInput.value || '章人丹'
     noEl.textContent = '（编号#00001）'
-    // defaults
-    set(nameEl, 80, 1500)
-    set(noEl, 640, 1500)
-    img.onload = () => refreshOut()
+
+    // Default anchor (rough) — you will calibrate anyway.
+    set(nameEl, 40, 1640)
+    set(noEl, 720, 1700)
+
+    img.onload = () => { dumpOne(id); renderNow().catch(()=>{}) }
   }
 
   function drag(el){
@@ -193,13 +214,12 @@
       e.preventDefault()
       const p = xy(el)
       start={x:e.clientX,y:e.clientY,left:p.left,top:p.top}
-      const mm=(ev)=>{ if(!start) return; set(el, start.left+(ev.clientX-start.x)/ZOOM, start.top+(ev.clientY-start.y)/ZOOM); refreshOut() }
+      const mm=(ev)=>{ if(!start) return; set(el, start.left+(ev.clientX-start.x)/ZOOM, start.top+(ev.clientY-start.y)/ZOOM); dumpOne(Number(cardSel.value)); scheduleRender() }
       const mu=()=>{ window.removeEventListener('mousemove',mm); window.removeEventListener('mouseup',mu); start=null }
       window.addEventListener('mousemove',mm)
       window.addEventListener('mouseup',mu)
     })
   }
-
   drag(nameEl); drag(noEl)
 
   document.addEventListener('keydown', (e)=>{
@@ -213,17 +233,21 @@
     if(e.key==='ArrowRight') set(tgt, p.left+s, p.top)
     if(e.key==='ArrowUp') set(tgt, p.left, p.top-s)
     if(e.key==='ArrowDown') set(tgt, p.left, p.top+s)
-    refreshOut()
+    dumpOne(Number(cardSel.value)); scheduleRender()
   })
 
   document.body.addEventListener('click', async (e)=>{
     const b = e.target.closest('button')
     if(!b) return
 
+    if (b.id === 'rerender') return renderNow().catch(()=>{})
+
     if (b.id === 'copyOne'){
       const text = out.textContent
-      try{ await navigator.clipboard.writeText(text); alert('已复制') } catch { alert('复制失败') }
+      try{ await navigator.clipboard.writeText(text) } catch {}
+      return
     }
+
     if (b.id === 'downloadAll'){
       const id = Number(cardSel.value)
       dumpOne(id)
@@ -231,21 +255,14 @@
       const url = URL.createObjectURL(blob)
       const a=document.createElement('a'); a.href=url; a.download='cards.json'; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(url),1500)
-    }
-    if (b.id === 'reset'){
-      allCfg={}; loadCard(Number(cardSel.value));
+      return
     }
 
     const stepKey = b.getAttribute('data-step')
     if (stepKey){
       step[stepKey] = step[stepKey]===1 ? 10 : 1
       b.textContent = '+'+step[stepKey]
-    }
-
-    const fsStepKey = b.getAttribute('data-fsstep')
-    if (fsStepKey){
-      fsStep[fsStepKey] = fsStep[fsStepKey]===1 ? 4 : 1
-      b.textContent = 'fs+'+fsStep[fsStepKey]
+      return
     }
 
     const fsTarget = b.getAttribute('data-fs')
@@ -253,9 +270,10 @@
       const dfs = Number(b.getAttribute('data-dfs'))
       const tgt = fsTarget==='no' ? noEl : nameEl
       const cur = parseFloat(getComputedStyle(tgt).fontSize)
-      const next = Math.max(10, cur + dfs * fsStep[fsTarget])
+      const next = Math.max(10, cur + dfs)
       tgt.style.fontSize = px(next)
-      refreshOut()
+      dumpOne(Number(cardSel.value)); scheduleRender()
+      return
     }
 
     const t = b.getAttribute('data-t')
@@ -266,12 +284,13 @@
       const p = xy(tgt)
       const s = step[t]
       set(tgt, p.left+dx*s, p.top+dy*s)
-      refreshOut()
+      dumpOne(Number(cardSel.value)); scheduleRender()
+      return
     }
   })
 
   cardSel.addEventListener('change', ()=>loadCard(Number(cardSel.value)))
-  nameInput.addEventListener('input', ()=>{ nameEl.textContent = nameInput.value||'章人丹'; refreshOut() })
+  nameInput.addEventListener('input', ()=>{ nameEl.textContent = nameInput.value||'章人丹'; dumpOne(Number(cardSel.value)); scheduleRender() })
 
   loadCard(1)
 })()
