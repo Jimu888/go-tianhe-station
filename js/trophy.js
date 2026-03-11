@@ -41,7 +41,7 @@ function normalizeText(s){
 }
 
 function setNameTextOnly(){
-  const name = normalizeText(nameInput.value) || '章人丹'
+  const name = normalizeText(nameInput.value) || '川网GO地铁'
   if (exportNameText) exportNameText.textContent = name
 }
 
