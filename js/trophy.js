@@ -9,6 +9,8 @@ const nameText = byId('nameText')
 const noText = byId('noText')
 const posterImg = byId('posterImg')
 const shareCard = byId('shareCard')
+const closedState = byId('closedState')
+const openState = byId('openState')
 
 function normalizeText(s){
   return (s ?? '').toString().trim().slice(0, 16)
@@ -56,7 +58,7 @@ async function downloadPNG(){
   }
 
   btnDownload.disabled = true
-  btnDownload.textContent = '领取中...'
+  btnDownload.textContent = '开启中...'
 
   try{
     const res = await claimCard(name)
@@ -68,7 +70,13 @@ async function downloadPNG(){
     fitNamePreview()
 
     await ensureImageLoaded(posterImg)
-    await new Promise(r=>setTimeout(r, 60))
+
+    // Reveal animation: show open state and hide closed state
+    openState.style.display = 'block'
+    shareCard.classList.add('revealing')
+
+    // wait for animation to finish before capturing
+    await new Promise(r=>setTimeout(r, 520))
 
     const canvas = await html2canvas(shareCard, {
       backgroundColor: null,
@@ -124,3 +132,9 @@ btnCopy.addEventListener('click', copyCopyText)
 
 // init
 fitNamePreview()
+
+// start in "closed" state
+try{
+  if (openState) openState.style.display = 'none'
+  if (closedState) closedState.style.display = 'flex'
+} catch {}

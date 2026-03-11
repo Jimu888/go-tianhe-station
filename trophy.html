@@ -19,9 +19,26 @@
           <div class="previewBox">
             <div class="previewInner">
               <div class="shareCard" id="shareCard">
-                <img class="posterImg" id="posterImg" src="./assets/cards/1.jpg" alt="card" />
-                <div class="nameOverlay" id="nameText">章人丹</div>
-                <div class="noOverlay" id="noText">#0001</div>
+                <!-- Closed (before claim) -->
+                <div class="closedState" id="closedState">
+                  <div class="chest" aria-hidden="true">
+                    <div class="chestLid"></div>
+                    <div class="chestBody"></div>
+                    <div class="chestLock"></div>
+                    <div class="chestGlow"></div>
+                  </div>
+                  <div class="closedText">
+                    <div class="closedTitle">自由卡卡盒</div>
+                    <div class="closedSub">输入名字，点击「保存卡片」开启抽卡</div>
+                  </div>
+                </div>
+
+                <!-- Open (after claim) -->
+                <div class="openState" id="openState" style="display:none;">
+                  <img class="posterImg" id="posterImg" src="./assets/cards/1.jpg" alt="card" />
+                  <div class="nameOverlay" id="nameText">章人丹</div>
+                  <div class="noOverlay" id="noText">#0001</div>
+                </div>
               </div>
             </div>
           </div>
