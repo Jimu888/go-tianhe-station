@@ -58,10 +58,10 @@
 }
 
 .closedText{ text-align:center; padding: 0 26px; }
-.closedTitle{ font-weight:900; font-size:38px; letter-spacing:.6px; color: rgba(255,255,255,.92); }
-.closedSub{ margin-top:12px; font-size:22px; color: rgba(255,255,255,.72); line-height:1.5; }
+.closedTitle{ font-weight:900; font-size:76px; letter-spacing:.6px; color: rgba(255,255,255,.92); }
+.closedSub{ margin-top:16px; font-size:44px; color: rgba(255,255,255,.72); line-height:1.5; }
 
-.chest{ position:relative; width:280px; height:230px; }
+.chest{ position:relative; width:560px; height:460px; }
 .chestGlow{
   position:absolute; inset:-30px -40px;
   background: radial-gradient(circle at 50% 55%, rgba(78,205,196,.35), transparent 60%);
