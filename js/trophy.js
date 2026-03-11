@@ -99,7 +99,9 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   noLeft   = clamp(noLeft, -220, cw + 220)
   noTop    = clamp(noTop, -220, ch + 220)
 
-  nameEl.style.left = Math.round(nameLeft) + 'px'
+  // global nudge for name
+  const NAME_NUDGE_X = 20
+  nameEl.style.left = Math.round(nameLeft + NAME_NUDGE_X) + 'px'
   nameEl.style.top  = Math.round(nameTop) + 'px'
   noEl.style.left   = Math.round(noLeft) + 'px'
   noEl.style.top    = Math.round(noTop) + 'px'
