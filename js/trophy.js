@@ -8,6 +8,11 @@ const calibPanel = byId('calibPanel')
 const btnCalibCopy = byId('btnCalibCopy')
 const btnCalibDownload = byId('btnCalibDownload')
 
+// test panel
+const testPanel = byId('testPanel')
+const btnExportAll12 = byId('btnExportAll12')
+const exportAllHint = byId('exportAllHint')
+
 const btnNameUp = byId('btnNameUp')
 const btnNameDown = byId('btnNameDown')
 const btnNameLeft = byId('btnNameLeft')
@@ -149,6 +154,20 @@ async function claimCard(name){
   return data
 }
 
+async function claimTestCard(name, cardTypeId){
+  const r = await fetch(`/api/claim?test=1&card=${encodeURIComponent(cardTypeId)}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name, cfTurnstileToken: '' }),
+  })
+  const text = await r.text()
+  let data
+  try { data = JSON.parse(text) } catch { data = null }
+  if (!data) throw new Error('服务器返回异常，请稍后重试')
+  if (!data?.ok) throw new Error(data?.error || 'claim failed')
+  return data
+}
+
 async function ensureImageLoaded(imgEl){
   await new Promise((resolve)=>{
     if (imgEl.complete) return resolve()
@@ -274,6 +293,68 @@ nameInput.addEventListener('input', ()=>{
 })
 btnDownload.addEventListener('click', downloadPNG)
 btnCopy.addEventListener('click', copyCopyText)
+
+async function exportAll12(){
+  const name = normalizeText(nameInput.value) || '章人丹'
+  if (!isTestMode()) {
+    alert('该功能仅测试模式可用（?test=1）')
+    return
+  }
+  btnExportAll12.disabled = true
+  if (exportAllHint) { exportAllHint.style.display = 'block'; exportAllHint.textContent = '开始导出...'; }
+
+  try{
+    await loadCardConfigs().catch(()=>{})
+
+    for (let i=1; i<=12; i++){
+      if (exportAllHint) exportAllHint.textContent = `导出中：${i}/12`
+      const res = await claimTestCard(name, i)
+
+      // update export target
+      exportPosterImg.src = res.image
+      exportNameText.textContent = res.name
+      exportNoText.textContent = res.cardNoDisplay || `（编号${res.cardNo}）`
+      await ensureImageLoaded(exportPosterImg)
+      applyOverlayLayout(i)
+
+      const canvas = await html2canvas(exportCard, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+      })
+
+      await new Promise((resolve)=>{
+        canvas.toBlob((blob)=>{
+          if(!blob) return resolve()
+          const a = document.createElement('a')
+          const url = URL.createObjectURL(blob)
+          const safeName = res.name.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'_')
+          a.href = url
+          a.download = `test-card-${String(i).padStart(2,'0')}-${safeName}.png`
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          setTimeout(()=>URL.revokeObjectURL(url), 2000)
+          resolve()
+        }, 'image/png')
+      })
+
+      // small delay to avoid browser download throttling
+      await new Promise(r=>setTimeout(r, 300))
+    }
+
+    if (exportAllHint) exportAllHint.textContent = '导出完成（如果浏览器拦截多文件下载，请允许）。'
+  } catch(e){
+    console.error(e)
+    if (exportAllHint) exportAllHint.textContent = '导出失败：' + (e?.message || 'unknown')
+  } finally {
+    btnExportAll12.disabled = false
+  }
+}
+
+if (btnExportAll12) btnExportAll12.addEventListener('click', exportAll12)
 
 function px(n){ return Math.round(n) + 'px' }
 
@@ -406,6 +487,11 @@ function bindNudgeButtons(){
   if (btnNoDown) btnNoDown.addEventListener('click', ()=>nudge(noText, 0, 1, stepNo))
   if (btnNoLeft) btnNoLeft.addEventListener('click', ()=>nudge(noText, -1, 0, stepNo))
   if (btnNoRight) btnNoRight.addEventListener('click', ()=>nudge(noText, 1, 0, stepNo))
+
+  // Test panel
+  if (isTestMode() && testPanel) {
+    testPanel.style.display = 'block'
+  }
 }
 
 function setupCalibMode(){
