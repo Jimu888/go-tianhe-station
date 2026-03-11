@@ -3,23 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>海报生成器</title>
+  <title>自由卡领取</title>
   <link rel="stylesheet" href="./css/style.css" />
   <link rel="stylesheet" href="./css/poster.css" />
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <meta name="referrer" content="no-referrer" />
 </head>
 <body>
   <div class="container">
     <div class="hero">
       <!-- 左侧：预览 -->
       <div class="card pad" id="export">
-        <h2 style="margin:0 0 10px; font-size:18px;">预览</h2>
+        <h2 style="margin:0 0 10px; font-size:18px;">卡片预览</h2>
         <div class="shareWrap">
           <div class="previewBox">
             <div class="previewInner">
               <div class="shareCard" id="shareCard">
-                <img class="posterImg" id="posterImg" src="./assets/noname/1.jpg" alt="poster" />
+                <img class="posterImg" id="posterImg" src="./assets/cards/1.jpg" alt="card" />
                 <div class="nameOverlay" id="nameText">章人丹</div>
+                <div class="noOverlay" id="noText">#0001</div>
               </div>
             </div>
           </div>
@@ -31,8 +33,8 @@
         
         <!-- 卡片1：输入名字 -->
         <div class="card pad">
-          <h1 class="h1" style="font-size:24px; margin:0 0 8px;">生成你的海报</h1>
-          <p class="sub" style="margin:0 0 10px;">只填名字。底图由系统随机分配。</p>
+          <h1 class="h1" style="font-size:24px; margin:0 0 8px;">领取你的自由卡</h1>
+          <p class="sub" style="margin:0 0 10px;">只填名字。系统会随机分配卡面（含限量/不限量），并生成卡牌编号。</p>
 
           <div class="field" style="margin-top:10px;">
             <label>昵称</label>
@@ -50,7 +52,7 @@
 天河路站 · The Portal to Freedom.
 通往「自由」的传送门。</textarea>
           <div class="btnrow" style="margin-top:14px;">
-            <button class="btn" id="btnDownload" type="button">保存海报</button>
+            <button class="btn" id="btnDownload" type="button">保存卡片</button>
           </div>
           <p class="sub" style="margin:10px 0 0; opacity:.75;">这段不写进海报，只是给用户发朋友圈/推文用。</p>
         </div>

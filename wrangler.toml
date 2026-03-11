@@ -1,0 +1,12 @@
+name = "go-tianhe-station"
+compatibility_date = "2026-03-11"
+
+# Cloudflare Pages will ignore most of this for static assets, but Durable Objects bindings are used.
+
+[[durable_objects.bindings]]
+name = "CLAIM_DO"
+class_name = "ClaimDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ClaimDO"]

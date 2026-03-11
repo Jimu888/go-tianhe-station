@@ -29,7 +29,7 @@
 .nameOverlay{
   position:absolute;
   left: 46px;
-  bottom: 168px; /* sits on the gray strip (moved down +5px) */
+  bottom: 168px; /* sits on the gray strip */
   z-index: 5;
 
   font-weight: 900;
@@ -39,7 +39,21 @@
   color: #d57f92; /* dusty pink */
   text-shadow: 0 2px 0 rgba(255,255,255,.25);
 
-  /* smooth */
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+}
+
+/* Card number position (placeholder; adjust when new card set arrives) */
+.noOverlay{
+  position:absolute;
+  right: 44px;
+  bottom: 168px;
+  z-index: 5;
+
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: 1px;
+  color: rgba(213,127,146,.9);
+  text-shadow: 0 2px 0 rgba(255,255,255,.22);
+  font-family: var(--mono);
 }

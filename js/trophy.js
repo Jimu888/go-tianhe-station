@@ -6,50 +6,18 @@ const btnCopy = byId('btnCopy')
 const copyText = byId('copyText')
 
 const nameText = byId('nameText')
+const noText = byId('noText')
 const posterImg = byId('posterImg')
 const shareCard = byId('shareCard')
 
 function normalizeText(s){
-  return (s ?? '').toString().trim()
+  return (s ?? '').toString().trim().slice(0, 16)
 }
 
-// Available posters (note: 9.jpg not present)
-const POSTERS = ['1','2','3','4','5','6','7','8','10','11']
-const STORAGE_KEY = 'noname.posterKey.v1'
-
-function posterPath(key){
-  return `./assets/noname/${key}.jpg`
-}
-
-function cryptoRandomInt(max){
-  const a = new Uint32Array(1)
-  crypto.getRandomValues(a)
-  return a[0] % max
-}
-
-function pickRandomPoster(){
-  return POSTERS[cryptoRandomInt(POSTERS.length)]
-}
-
-function getAssignedPoster(){
-  const cached = localStorage.getItem(STORAGE_KEY)
-  if (cached && POSTERS.includes(cached)) return cached
-  const key = pickRandomPoster()
-  localStorage.setItem(STORAGE_KEY, key)
-  return key
-}
-
-function setAssignedPoster(key){
-  const k = POSTERS.includes(key) ? key : pickRandomPoster()
-  localStorage.setItem(STORAGE_KEY, k)
-  posterImg.src = posterPath(k)
-}
-
-function fitName(){
+function fitNamePreview(){
   const name = normalizeText(nameInput.value) || '章人丹'
   nameText.textContent = name
 
-  // Auto fit for long names
   const len = name.length
   let size = 64
   if (len >= 10) size = 44
@@ -58,53 +26,83 @@ function fitName(){
   nameText.style.fontSize = size + 'px'
 }
 
-function setPreview(){
-  const key = getAssignedPoster()
-  posterImg.src = posterPath(key)
-  fitName()
+async function claimCard(name){
+  const r = await fetch('/api/claim', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name }),
+  })
+  const data = await r.json()
+  if (!data?.ok) throw new Error(data?.error || 'claim failed')
+  return data
+}
+
+async function ensureImageLoaded(imgEl){
+  await new Promise((resolve)=>{
+    if (imgEl.complete) return resolve()
+    const done = ()=>resolve()
+    imgEl.onload = done
+    imgEl.onerror = done
+    setTimeout(done, 2000)
+  })
 }
 
 async function downloadPNG(){
-  setPreview()
+  const name = normalizeText(nameInput.value)
+  if(!name){
+    alert('请先输入名字')
+    nameInput.focus()
+    return
+  }
 
-  await new Promise((resolve)=>{
-    if (posterImg.complete) return resolve()
-    const done = ()=>resolve()
-    posterImg.onload = done
-    posterImg.onerror = done
-    setTimeout(done, 1500)
-  })
-  await new Promise(r=>setTimeout(r, 50))
+  btnDownload.disabled = true
+  btnDownload.textContent = '领取中...'
 
-  const canvas = await html2canvas(shareCard, {
-    backgroundColor: null,
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-  })
+  try{
+    const res = await claimCard(name)
 
-  canvas.toBlob((blob)=>{
-    if(!blob){
-      alert('导出失败，请重试')
-      return
-    }
-    const a = document.createElement('a')
-    const url = URL.createObjectURL(blob)
+    // Update preview to the assigned card
+    posterImg.src = res.image
+    nameText.textContent = res.name
+    noText.textContent = res.cardNo
+    fitNamePreview()
 
-    const safeName = (normalizeText(nameInput.value) || 'unnamed')
-      .replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'_')
+    await ensureImageLoaded(posterImg)
+    await new Promise(r=>setTimeout(r, 60))
 
-    a.href = url
-    a.download = `poster-${safeName}-${Date.now()}.png`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    setTimeout(()=>URL.revokeObjectURL(url), 3000)
-  }, 'image/png')
+    const canvas = await html2canvas(shareCard, {
+      backgroundColor: null,
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+    })
+
+    canvas.toBlob((blob)=>{
+      if(!blob){
+        alert('导出失败，请重试')
+        return
+      }
+      const a = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+
+      const safeName = res.name.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'_')
+      a.href = url
+      a.download = `card-${safeName}-${res.cardNo.replace('#','')}.png`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(()=>URL.revokeObjectURL(url), 3000)
+    }, 'image/png')
+
+  } catch(e){
+    console.error(e)
+    alert('领取失败：' + (e?.message || 'unknown'))
+  } finally {
+    btnDownload.disabled = false
+    btnDownload.textContent = '保存卡片'
+  }
 }
-
-// reroll removed (no UI button)
 
 async function copyCopyText(){
   const text = copyText.value
@@ -113,7 +111,6 @@ async function copyCopyText(){
     btnCopy.textContent = '已复制'
     setTimeout(()=>btnCopy.textContent='复制', 900)
   } catch {
-    // fallback
     copyText.select()
     document.execCommand('copy')
     btnCopy.textContent = '已复制'
@@ -121,8 +118,9 @@ async function copyCopyText(){
   }
 }
 
-nameInput.addEventListener('input', fitName)
+nameInput.addEventListener('input', fitNamePreview)
 btnDownload.addEventListener('click', downloadPNG)
 btnCopy.addEventListener('click', copyCopyText)
 
-setPreview()
+// init
+fitNamePreview()
