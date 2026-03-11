@@ -81,7 +81,15 @@
 
 /* Calibration helpers */
 .shareCard.calib .nameOverlay,
-.shareCard.calib .noOverlay{ outline: 2px dashed rgba(159,214,255,.55); outline-offset: 6px; }
+.shareCard.calib .noOverlay{
+  outline: 2px dashed rgba(159,214,255,.65);
+  outline-offset: 6px;
+  background: rgba(0,0,0,.22);
+  border-radius: 10px;
+  padding: 6px 10px;
+  backdrop-filter: blur(6px);
+  touch-action: none;
+}
 .shareCard.calib .nameOverlay:active,
 .shareCard.calib .noOverlay:active{ cursor: grabbing; }
 

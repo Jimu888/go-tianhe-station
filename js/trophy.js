@@ -227,12 +227,14 @@ function makeDraggable(el){
   let start = null
   el.addEventListener('pointerdown', (e)=>{
     if (!isCalibMode()) return
+    e.preventDefault()
     el.setPointerCapture(e.pointerId)
     const xy = getXY(el)
     start = { x: e.clientX, y: e.clientY, left: xy.left, top: xy.top }
   })
   el.addEventListener('pointermove', (e)=>{
     if (!start || !isCalibMode()) return
+    e.preventDefault()
     const dx = e.clientX - start.x
     const dy = e.clientY - start.y
     setXY(el, start.left + dx, start.top + dy)
@@ -306,6 +308,13 @@ function setupCalibMode(){
   const n = parseInt(getForcedCard() || '1', 10)
   const cardId = (n>=1 && n<=12) ? n : 1
   posterImg.src = `/assets/cards/${cardId}.jpg`
+
+  // ensure overlays visible
+  nameText.style.display = 'block'
+  noText.style.display = 'block'
+  nameText.style.zIndex = '50'
+  noText.style.zIndex = '50'
+
   noText.textContent = '#0001'
   nameText.textContent = normalizeText(nameInput.value) || '章人丹'
 
@@ -318,6 +327,11 @@ function setupCalibMode(){
   makeDraggable(noText)
 
   document.addEventListener('keydown', (e)=>{
+    if (!isCalibMode()) return
+    const keys = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown']
+    if (!keys.includes(e.key)) return
+    e.preventDefault()
+
     const step = e.shiftKey ? 10 : 1
     const target = (e.altKey ? noText : nameText)
     const xy = getXY(target)
