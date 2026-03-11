@@ -55,6 +55,11 @@ const exportNameText = byId('exportNameText')
 const exportNoText = byId('exportNoText')
 const debugInfo = byId('debugInfo')
 const statusBar = byId('statusBar')
+const modalMask = byId('modalMask')
+const modalBox = byId('modalBox')
+const modalTitle = byId('modalTitle')
+const modalText = byId('modalText')
+const modalOk = byId('modalOk')
 
 function normalizeText(s){
   return (s ?? '').toString().trim().slice(0, 16)
@@ -72,6 +77,23 @@ function setStatus(msg, kind='info'){
   }
   statusBar.style.background = colors[kind] || colors.info
 }
+
+function showModal(title, text){
+  if(!modalMask || !modalBox) return alert(text || title || '')
+  if(modalTitle) modalTitle.textContent = title || '提示'
+  if(modalText) modalText.textContent = text || ''
+  modalMask.style.display = 'block'
+  modalBox.style.display = 'block'
+}
+
+function hideModal(){
+  try{ modalMask.style.display = 'none' }catch{}
+  try{ modalBox.style.display = 'none' }catch{}
+}
+
+if(modalMask) modalMask.addEventListener('click', hideModal)
+if(modalOk) modalOk.addEventListener('click', hideModal)
+
 
 
 function setNameTextOnly(){
@@ -255,7 +277,7 @@ function getForcedCard(){
 async function downloadPNG(){
   const name = normalizeText(nameInput.value)
   if(!name){
-    alert('请先输入名字')
+    showModal('还差一步', '先填一个昵称，再抽取自由卡。')
     nameInput.focus()
     return
   }
@@ -284,15 +306,17 @@ async function downloadPNG(){
     if (res?.alreadyClaimed) {
       if (res.reason === 'device') {
         setStatus('你已在本设备领取过：已为你重新生成并下载同一张卡（编号不变）。', 'warn')
+        showModal('你已领取过', '本设备已领取过自由卡，本次将为你重新生成并下载同一张卡（编号不变）。')
       } else if (res.reason === 'phone') {
         setStatus('该手机号已领取过：已为你找回并重新生成下载（编号不变）。', 'warn')
+        showModal('已为你找回', '该手机号已领取过自由卡，本次将为你找回并重新生成下载（编号不变）。')
       } else {
         setStatus('你已领取过：已为你重新生成下载（编号不变）。', 'warn')
+        showModal('你已领取过', '本次将为你重新生成并下载同一张卡（编号不变）。')
       }
-      alert('你已领取过，本次为你重新下载同一张卡（编号不变）')
     } else {
       setStatus('领取成功！正在生成图片…', 'ok')
-      alert('领取成功！正在生成图片…')
+      showModal('领取成功', '正在为你生成图片，请稍等…')
     }
 
     // Update preview to the assigned card
@@ -345,7 +369,7 @@ async function downloadPNG(){
       setTimeout(()=>URL.revokeObjectURL(url), 3000)
 
       setStatus('下载已开始（如被浏览器拦截，请允许下载）。', 'ok')
-      alert('已开始下载（如被浏览器拦截，请允许下载）')
+      showModal('已开始下载', '如果浏览器拦截了下载，请选择“允许”。')
     }, 'image/png')
 
   } catch(e){
