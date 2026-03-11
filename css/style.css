@@ -151,10 +151,10 @@ a{color:inherit; text-decoration:none}
 
 .hero{
   display:grid;
-  grid-template-columns: 540px 420px; /* 左预览固定宽，右侧卡片更小 */
+  grid-template-columns: 600px 420px; /* 预览区（缩略图） */
   gap:22px;
   align-items:start;
-  justify-content: center; /* overall centered */
+  justify-content: center;
   margin-bottom:24px;
 }
 
@@ -464,8 +464,8 @@ input[type="text"]:focus, textarea:focus, select:focus{
 /* 预览缩放 */
 /* Preview sizing: avoid transform-created blank space by using a fixed-height viewport */
 .previewBox{
-  width: 540px;
-  height: 594px; /* 1080 * 0.55 */
+  width: 600px;
+  height: 720px;
   overflow: hidden;
   border-radius: 20px;
 
@@ -475,29 +475,20 @@ input[type="text"]:focus, textarea:focus, select:focus{
 }
 
 .previewInner{
-  width: 540px;
-  height: 1080px;
-  transform: scale(.55);
-  transform-origin: top center;
-}
-
-/* Calibration: make preview bigger and scrollable for precise placement */
-html[data-calib="1"] .previewBox{
-  height: 860px;
-  overflow: auto;
-}
-html[data-calib="1"] .previewInner{
-  transform: scale(.80);
+  width: 1080px;
+  height: 2160px;
+  transform: scale(.333);
   transform-origin: top center;
 }
 
 @media (max-width: 900px){
   .previewBox{
-    width: 540px;
-    height: 410px; /* 1080 * 0.38 */
+    width: 100%;
+    height: 560px;
   }
-  .previewInner{ transform: scale(.38); transform-origin: top center; }
+  .previewInner{ transform: scale(.26); transform-origin: top center; }
 }
+
 
 /* 响应式调整 */
 @media (max-width: 600px){

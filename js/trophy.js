@@ -84,7 +84,7 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
     nameEl.style.fontSize = cfg.name.font + 'px'
 
     // Apply global tweak: move all numbers up 10px
-    const GLOBAL_NO_Y = -10
+    const GLOBAL_NO_Y = -20
     noEl.style.left = cfg.no.left + 'px'
     noEl.style.top = (cfg.no.top + GLOBAL_NO_Y) + 'px'
     noEl.style.fontSize = cfg.no.font + 'px'
@@ -113,7 +113,7 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
     noLeft   = clamp(noLeft, -220, cw + 220)
     noTop    = clamp(noTop, -220, ch + 220)
 
-    const GLOBAL_NO_Y = -10
+    const GLOBAL_NO_Y = -20
 
     nameEl.style.left = Math.round(nameLeft) + 'px'
     nameEl.style.top  = Math.round(nameTop) + 'px'
@@ -233,7 +233,7 @@ async function downloadPNG(){
     // 2) download from same canvas => preview == saved
     const canvas = await html2canvas(exportCard, {
       backgroundColor: null,
-      scale: 2,
+      scale: 1,
       useCORS: true,
       allowTaint: true,
       logging: false,
@@ -321,7 +321,7 @@ async function exportAll12(){
 
       const canvas = await html2canvas(exportCard, {
         backgroundColor: null,
-        scale: 2,
+        scale: 1,
         useCORS: true,
         allowTaint: true,
         logging: false,
