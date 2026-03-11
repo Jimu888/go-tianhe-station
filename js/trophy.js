@@ -3,6 +3,25 @@ function byId(id){return document.getElementById(id)}
 const nameInput = byId('nameInput')
 const btnDownload = byId('btnDownload')
 const phoneInput = byId('phoneInput')
+
+function getOrCreateDeviceId(){
+  try{
+    const KEY='go_th_device_id'
+    let id = localStorage.getItem(KEY)
+    if(!id){
+      // prefer crypto.randomUUID
+      id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (String(Date.now()) + '-' + Math.random().toString(16).slice(2))
+      localStorage.setItem(KEY, id)
+    }
+    // also set cookie for redundancy (1 year)
+    try{
+      document.cookie = `device_id=${encodeURIComponent(id)}; Max-Age=${60*60*24*365}; Path=/; SameSite=Lax`
+    } catch {}
+    return id
+  }catch{ return '' }
+}
+
+const DEVICE_ID = getOrCreateDeviceId()
 const calibPanel = byId('calibPanel')
 const btnCalibCopy = byId('btnCalibCopy')
 const btnCalibDownload = byId('btnCalibDownload')
@@ -156,13 +175,14 @@ function applyOverlayLayout(cardTypeId){
 
 async function claimCard(name){
   const phone = normalizePhone(phoneInput?.value)
+  const deviceId = DEVICE_ID
   const cfTurnstileToken = getTurnstileToken()
 
   const qs = isTestMode() ? `?test=1${getForcedCard()?`&card=${encodeURIComponent(getForcedCard())}`:''}` : ''
   const r = await fetch('/api/claim' + qs, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, phone, cfTurnstileToken }),
+    body: JSON.stringify({ name, phone, deviceId, cfTurnstileToken }),
   })
 
   const text = await r.text()

@@ -50,9 +50,20 @@ async function phoneHash(env, phone) {
   return sha256Hex(`${phone}|${salt}`)
 }
 
-async function getExistingClaim(db, phoneHash) {
+async function deviceHash(env, deviceId) {
+  const salt = (env.DEVICE_HASH_SALT || 'salt').toString()
+  return sha256Hex(`${deviceId}|${salt}`)
+}
+
+async function getExistingPhoneClaim(db, ph) {
   return db.prepare('SELECT card_no_int, card_type FROM phone_claims WHERE phone_hash = ?;')
-    .bind(phoneHash)
+    .bind(ph)
+    .first()
+}
+
+async function getExistingDeviceClaim(db, dh) {
+  return db.prepare('SELECT card_no_int, card_type FROM device_claims WHERE device_hash = ?;')
+    .bind(dh)
     .first()
 }
 
@@ -68,6 +79,7 @@ async function ensureSchema(db) {
   await db.exec('CREATE TABLE IF NOT EXISTS limited (card_type INTEGER PRIMARY KEY, remaining INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS ip_rate (ip TEXT PRIMARY KEY, last_ms INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS phone_claims (phone_hash TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
+  await db.exec('CREATE TABLE IF NOT EXISTS device_claims (device_hash TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
 
   await db.prepare('INSERT INTO meta (id, next_no) VALUES (1, 1) ON CONFLICT(id) DO NOTHING;').run()
 
@@ -183,20 +195,47 @@ export async function onRequestPost(context) {
     if (!vr?.success) return bad('Human verification failed', 403)
 
     const phone = normalizePhone(body?.phone)
+    const deviceId = (body?.deviceId ?? '').toString().trim()
     if (!/^1\d{10}$/.test(phone)) return bad('Invalid phone')
+    if (!deviceId) return bad('Device id required')
 
     const ph = await phoneHash(env, phone)
-    const existing = await getExistingClaim(env.DB, ph)
-    if (existing?.card_no_int && existing?.card_type) {
-      const cardNo = `#${padNo(existing.card_no_int)}`
+    const dh = await deviceHash(env, deviceId)
+
+    // Device first: one device -> one card
+    const exDev = await getExistingDeviceClaim(env.DB, dh)
+    if (exDev?.card_no_int && exDev?.card_type) {
+      const cardNo = `#${padNo(exDev.card_no_int)}`
       return json({
         ok: true,
         alreadyClaimed: true,
+        reason: 'device',
         name,
-        cardTypeId: existing.card_type,
+        cardTypeId: exDev.card_type,
         cardNo,
         cardNoDisplay: `（编号${cardNo}）`,
-        image: `/assets/cards/${existing.card_type}.jpg`,
+        image: `/assets/cards/${exDev.card_type}.jpg`,
+      })
+    }
+
+    // Phone: allow re-download on another device, but not multiple new claims
+    const exPhone = await getExistingPhoneClaim(env.DB, ph)
+    if (exPhone?.card_no_int && exPhone?.card_type) {
+      const cardNo = `#${padNo(exPhone.card_no_int)}`
+      // also bind this device to the existing claim (best effort)
+      await env.DB.prepare('INSERT INTO device_claims (device_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?) ON CONFLICT(device_hash) DO NOTHING;')
+        .bind(dh, Date.now(), exPhone.card_no_int, exPhone.card_type)
+        .run()
+
+      return json({
+        ok: true,
+        alreadyClaimed: true,
+        reason: 'phone',
+        name,
+        cardTypeId: exPhone.card_type,
+        cardNo,
+        cardNoDisplay: `（编号${cardNo}）`,
+        image: `/assets/cards/${exPhone.card_type}.jpg`,
       })
     }
 
@@ -206,14 +245,20 @@ export async function onRequestPost(context) {
     const cardTypeId = await pickCardType(env.DB)
     const cardNoInt = await nextCardNo(env.DB)
 
+    // Insert both bindings (best effort; if a race happens, fall back to existing)
     await env.DB.prepare('INSERT INTO phone_claims (phone_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?);')
       .bind(ph, Date.now(), cardNoInt, cardTypeId)
+      .run()
+
+    await env.DB.prepare('INSERT INTO device_claims (device_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?);')
+      .bind(dh, Date.now(), cardNoInt, cardTypeId)
       .run()
 
     const cardNo = `#${padNo(cardNoInt)}`
     return json({
       ok: true,
       alreadyClaimed: false,
+      reason: 'new',
       name,
       cardTypeId,
       cardNo,
