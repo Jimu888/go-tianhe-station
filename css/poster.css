@@ -154,13 +154,15 @@
   left: 46px;
   top: 800px;
   z-index: 50;
-  cursor: grab;
+
+  /* match calib-hd overlay box model to avoid visual drift */
+  padding: 10px 14px;
+  background: transparent;
 
   font-weight: 800;
   font-size: 54px;
   letter-spacing: .5px;
 
-  /* match spec */
   color: #979595;
   text-shadow: none;
   font-family: "PingFang SC", "PingFangSC-Regular", "PingFang SC Regular", var(--sans);
@@ -175,7 +177,9 @@
   left: 360px;
   top: 800px;
   z-index: 50;
-  cursor: grab;
+
+  padding: 10px 14px;
+  background: transparent;
 
   font-weight: 700;
   font-size: 24px;

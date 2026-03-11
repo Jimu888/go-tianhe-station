@@ -35,6 +35,7 @@ const exportCard = byId('exportCard')
 const exportPosterImg = byId('exportPosterImg')
 const exportNameText = byId('exportNameText')
 const exportNoText = byId('exportNoText')
+const debugInfo = byId('debugInfo')
 
 function normalizeText(s){
   return (s ?? '').toString().trim().slice(0, 16)
@@ -72,12 +73,12 @@ let currentCardTypeId = 1
 function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   if (!cardConfigs) return
   const cfg = cardConfigs[String(cardTypeId)]
-  if (!cfg?.nameBox || !cfg?.noBox) return
+  if (!cfg) return
 
   const cw = cardEl.clientWidth || 1
   const ch = cardEl.clientHeight || 1
 
-  // Preferred: new schema from calib.html (export-space coords)
+  // Preferred: new schema from calib-hd.html (export-space coords)
   if (cfg.name && cfg.no) {
     nameEl.style.left = cfg.name.left + 'px'
     nameEl.style.top = cfg.name.top + 'px'
@@ -88,6 +89,11 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
     noEl.style.left = cfg.no.left + 'px'
     noEl.style.top = (cfg.no.top + GLOBAL_NO_Y) + 'px'
     noEl.style.fontSize = cfg.no.font + 'px'
+
+    if (debugInfo && isDebugMode()) {
+      debugInfo.style.display = 'block'
+      debugInfo.textContent = `card=${cardTypeId} name=(${cfg.name.left},${cfg.name.top},${cfg.name.font}) no=(${cfg.no.left},${cfg.no.top},${cfg.no.font})`
+    }
   } else {
     // Back-compat: old schema (natural-image coords)
     const iw = imgEl.naturalWidth || 1
@@ -186,6 +192,11 @@ async function ensureImageLoaded(imgEl){
 function isTestMode(){
   const u = new URL(location.href)
   return u.searchParams.get('test') === '1'
+}
+
+function isDebugMode(){
+  const u = new URL(location.href)
+  return u.searchParams.get('debug') === '1' || isTestMode()
 }
 
 function isCalibMode(){
