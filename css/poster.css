@@ -122,35 +122,36 @@
   100%{ opacity:1; transform: translateY(-6px) rotateX(0deg) scale(1); }
 }
 
-/* Name position (match sample “章人丹”) */
+/* Name/No overlays are now positioned per-card via configs/cards.json */
 .nameOverlay{
   position:absolute;
   left: 46px;
-  bottom: 168px; /* sits on the gray strip */
+  top: 800px;
   z-index: 5;
 
   font-weight: 900;
   font-size: 64px;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
 
-  color: #d57f92; /* dusty pink */
-  text-shadow: 0 2px 0 rgba(255,255,255,.25);
+  color: rgba(210, 230, 255, .92);
+  text-shadow: 0 2px 0 rgba(0,0,0,.22);
 
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
+  white-space: nowrap;
 }
 
-/* Card number position (placeholder; adjust when new card set arrives) */
 .noOverlay{
   position:absolute;
-  right: 44px;
-  bottom: 168px;
+  left: 360px;
+  top: 800px;
   z-index: 5;
 
   font-weight: 800;
   font-size: 28px;
-  letter-spacing: 1px;
-  color: rgba(213,127,146,.9);
-  text-shadow: 0 2px 0 rgba(255,255,255,.22);
+  letter-spacing: 0.5px;
+  color: rgba(210, 230, 255, .86);
+  text-shadow: 0 2px 0 rgba(0,0,0,.20);
   font-family: var(--mono);
+  white-space: nowrap;
 }

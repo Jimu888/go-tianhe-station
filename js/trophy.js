@@ -34,6 +34,44 @@ function getTurnstileToken(){
   return (el && el.value) ? el.value : ''
 }
 
+let cardConfigs = null
+
+async function loadCardConfigs(){
+  if (cardConfigs) return cardConfigs
+  const r = await fetch('/configs/cards.json', { cache: 'no-store' })
+  const t = await r.text()
+  try { cardConfigs = JSON.parse(t) } catch { cardConfigs = null }
+  return cardConfigs
+}
+
+function applyOverlayLayout(cardTypeId){
+  if (!cardConfigs) return
+  const cfg = cardConfigs[String(cardTypeId)]
+  if (!cfg?.nameBox || !cfg?.noBox) return
+
+  const iw = posterImg.naturalWidth || 1
+  const ih = posterImg.naturalHeight || 1
+  const cw = shareCard.clientWidth || 1
+  const ch = shareCard.clientHeight || 1
+
+  const sx = cw / iw
+  const sy = ch / ih
+
+  const nb = cfg.nameBox
+  const xb = cfg.noBox
+
+  nameText.style.left = Math.round(nb.x * sx) + 'px'
+  nameText.style.top  = Math.round(nb.y * sy) + 'px'
+  noText.style.left   = Math.round(xb.x * sx) + 'px'
+  noText.style.top    = Math.round(xb.y * sy) + 'px'
+
+  // Font sizing from box height
+  const nameSize = Math.max(18, Math.min(84, Math.round(nb.h * sy * 0.70)))
+  const noSize = Math.max(14, Math.min(48, Math.round(xb.h * sy * 0.42)))
+  nameText.style.fontSize = nameSize + 'px'
+  noText.style.fontSize = noSize + 'px'
+}
+
 async function claimCard(name){
   const cfTurnstileToken = getTurnstileToken()
   const r = await fetch('/api/claim', {
@@ -84,9 +122,11 @@ async function downloadPNG(){
     posterImg.src = res.image
     nameText.textContent = res.name
     noText.textContent = res.cardNo
-    fitNamePreview()
 
+    // Ensure configs loaded + image loaded, then apply per-card layout
+    await loadCardConfigs().catch(()=>{})
     await ensureImageLoaded(posterImg)
+    applyOverlayLayout(res.cardTypeId)
 
     // Reveal animation: start opening the box first, then show the card
     shareCard.classList.add('revealing')
@@ -149,6 +189,7 @@ btnDownload.addEventListener('click', downloadPNG)
 btnCopy.addEventListener('click', copyCopyText)
 
 // init
+loadCardConfigs().catch(()=>{})
 fitNamePreview()
 
 // start in "closed" state
