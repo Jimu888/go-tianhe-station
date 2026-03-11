@@ -1,0 +1,519 @@
+@font-face{
+  font-family:"DingTalk JinBuTi";
+  src:url("../assets/fonts/DingTalkJinBuTi.ttf") format("truetype");
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap;
+}
+
+:root{
+  /* 山峰海报风格：渐变背景 + 复古胶片感 */
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  
+  /* 渐变色彩方案 */
+  --gradient-pink: linear-gradient(135deg, #ff6b9d 0%, #ffa07a 50%, #ff9a8b 100%);
+  --gradient-blue: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-sunset: linear-gradient(135deg, #ff9a8b 0%, #fecfef 50%, #fecfef 100%);
+  --gradient-night: linear-gradient(135deg, #2c5aa0 0%, #764ba2 100%);
+  
+  /* 薄荷绿文字色彩 */
+  --accent-mint: #4ecdc4;
+  --accent-bright: #45e6a8;
+  --accent-neon: #00d4aa;
+  
+  /* 基础色彩 */
+  --card: rgba(255,255,255,.12);
+  --stroke: rgba(255,255,255,.18);
+  --text: rgba(255,255,255,.95);
+  --muted: rgba(255,255,255,.72);
+  --black-dot: rgba(0,0,0,.85);
+
+  --radius: 20px;
+  --shadow: 0 20px 60px rgba(0,0,0,.45);
+  --shadow-large: 0 30px 80px rgba(0,0,0,.35);
+
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --sans: "DingTalk JinBuTi", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC", sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+
+body{
+  margin:0;
+  font-family:var(--sans);
+  color:var(--text);
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(255,107,157,.10), transparent 65%),
+    radial-gradient(1000px 900px at 80% 20%, rgba(78,205,196,.08), transparent 60%),
+    radial-gradient(900px 700px at 50% 90%, rgba(118,75,162,.14), transparent 55%),
+    linear-gradient(135deg, #0b1020 0%, #0f1a2e 50%, #101428 100%);
+}
+
+/* 背景的轻噪点（更克制，接近你给的玻璃卡片参考） */
+body:before{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none;
+  opacity:.04;
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+}
+
+/* 薄荷绿强调色 */
+.accent-text{
+  color: var(--accent-mint);
+  text-shadow: 0 0 12px var(--accent-neon);
+}
+
+.gradient-text{
+  background: linear-gradient(135deg, var(--accent-bright) 0%, var(--accent-mint) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 毛玻璃效果 */
+.glass{
+  background: rgba(255,255,255,.08);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255,255,255,.15);
+}
+
+a{color:inherit; text-decoration:none}
+
+.container{max-width:1200px; margin:0 auto; padding:26px 20px 60px}
+
+.nav{
+  display:flex; 
+  align-items:center; 
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:32px;
+  padding: 16px 0;
+}
+
+.brand{
+  display:flex; 
+  align-items:center; 
+  gap:12px; 
+  font-weight:900; 
+  letter-spacing:.3px;
+  font-size: 18px;
+}
+
+.brand .dot{
+  width:12px; 
+  height:12px; 
+  border-radius:50%; 
+  background: var(--gradient-pink);
+  box-shadow: 0 0 20px rgba(255,107,157,.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.navlinks{display:flex; gap:12px; flex-wrap:wrap}
+
+.pill{
+  display:inline-flex; 
+  align-items:center; 
+  gap:8px;
+  padding:12px 16px;
+  border-radius:25px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--stroke);
+  backdrop-filter: blur(12px);
+  transition: all .3s ease;
+}
+
+.pill:hover{
+  background: rgba(78,205,196,.15);
+  border-color: var(--accent-mint);
+  transform: translateY(-2px);
+}
+
+.pill[aria-current="page"]{
+  background: rgba(78,205,196,.2);
+  border-color: var(--accent-mint);
+  box-shadow: 0 0 0 3px rgba(78,205,196,.1);
+}
+
+.hero{
+  display:grid;
+  grid-template-columns: 540px 420px; /* 左预览固定宽，右侧卡片更小 */
+  gap:22px;
+  align-items:start;
+  margin-bottom:24px;
+}
+
+@media (max-width: 980px){
+  .hero{grid-template-columns:1fr}
+}
+
+.card{
+  border-radius: 22px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 18px 60px rgba(0,0,0,.35);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  overflow: hidden;
+  position: relative;
+}
+
+.card.pad{padding:20px}
+
+/* 玻璃高光 */
+.card:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(900px 260px at 18% 10%, rgba(255,255,255,.10), transparent 60%),
+    radial-gradient(900px 260px at 82% 0%, rgba(78,205,196,.08), transparent 55%);
+  pointer-events:none;
+}
+
+.h1{
+  font-size:42px; 
+  line-height:1.1; 
+  margin:0 0 12px; 
+  letter-spacing:-0.8px;
+  font-weight:900;
+}
+
+.sub{
+  color:var(--muted); 
+  margin:0; 
+  line-height:1.6;
+  font-size: 16px;
+}
+
+.kbd{
+  font-family:var(--mono); 
+  font-size:13px; 
+  color:var(--accent-mint); 
+  padding:3px 10px; 
+  border-radius:8px; 
+  border:1px solid rgba(78,205,196,.3); 
+  background:rgba(78,205,196,.1);
+  box-shadow: inset 0 0 10px rgba(78,205,196,.1);
+}
+
+.btnrow{display:flex; gap:12px; flex-wrap:wrap; margin-top:18px}
+
+.btn{
+  border:none;
+  padding:14px 18px;
+  border-radius:14px;
+  font-weight:900;
+  cursor:pointer;
+  font-size: 15px;
+  transition: all .3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn{
+  color: rgba(20,20,30,.95);
+  background: var(--gradient-pink);
+  box-shadow: 0 15px 40px rgba(255,107,157,.3);
+}
+
+.btn:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: linear-gradient(45deg, rgba(255,255,255,.3), transparent 70%);
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+
+.btn:hover:before{opacity: 1}
+
+.btn.secondary{
+  color: var(--text);
+  background: rgba(255,255,255,.08);
+  border: 1px solid var(--stroke);
+  box-shadow: 0 10px 30px rgba(0,0,0,.15);
+}
+
+.btn:active{transform: translateY(2px)}
+
+.field{display:flex; flex-direction:column; gap:10px; margin-top:16px}
+
+.field label{
+  font-weight: 600;
+  color: var(--accent-mint);
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+input[type="text"], textarea, select{
+  width:100%;
+  padding:14px 16px;
+  border-radius:14px;
+  background: rgba(0,0,0,.25);
+  border: 1px solid rgba(255,255,255,.12);
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  transition: all .3s ease;
+}
+
+input[type="text"]:focus, textarea:focus, select:focus{
+  border-color: var(--accent-mint);
+  box-shadow: 0 0 0 4px rgba(78,205,196,.15);
+  background: rgba(0,0,0,.35);
+}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+@media (max-width: 900px){
+  .grid2{grid-template-columns:1fr}
+}
+
+/* 海报预览区域 - 完全匹配原始设计 */
+.shareWrap{
+  display:flex;
+  justify-content:center;
+  padding:12px 10px; /* less vertical whitespace */
+  background: radial-gradient(circle at center, rgba(0,0,0,.18), transparent);
+  border-radius: var(--radius);
+}
+
+.shareCard{
+  width: 540px; 
+  height: 1080px; 
+  border-radius: 40px; /* 更大的圆角，匹配原设计 */
+  overflow: hidden;
+  position: relative;
+  background: #000; /* 默认黑色背景 */
+  box-shadow: var(--shadow-large);
+}
+
+/* 山峰主图片区域 - 占据大部分空间 */
+.mountainArea{
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 200px; /* 给底部信息区域留出空间 */
+  overflow: hidden;
+  border-radius: 40px 40px 0 0;
+}
+
+.mountainImg{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: 
+    contrast(1.1) 
+    saturate(1.2) 
+    sepia(.05);
+}
+
+/* 黑点分隔条 - 在山峰和底部信息之间 */
+.shareCard:before{
+  content:"";
+  position: absolute;
+  bottom: 200px; /* 与底部信息区域对齐 */
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: 
+    radial-gradient(circle at 6% 50%, var(--black-dot) 6px, transparent 8px),
+    radial-gradient(circle at 18% 50%, var(--black-dot) 6px, transparent 8px),
+    radial-gradient(circle at 30% 50%, var(--black-dot) 6px, transparent 8px),
+    radial-gradient(circle at 42% 50%, var(--black-dot) 6px, transparent 8px),
+    radial-gradient(circle at 54% 50%, var(--black-dot) 6px, transparent 8px),
+    radial-gradient(circle at 66% 50%, var(--black-dot) 6px, transparent 8px),
+    radial-gradient(circle at 78% 50%, var(--black-dot) 6px, transparent 8px),
+    radial-gradient(circle at 90% 50%, var(--black-dot) 6px, transparent 8px);
+  z-index: 15;
+}
+
+/* 文字覆盖层 - 直接叠加在山峰图片上 */
+.textOverlay{
+  position: absolute;
+  top: 60px;
+  left: 40px;
+  right: 40px;
+  z-index: 10;
+  text-align: left; /* 原设计是左对齐 */
+}
+
+.bigName{
+  font-size: 56px;
+  line-height: 1.0;
+  margin: 0 0 8px;
+  letter-spacing: -1px;
+  font-weight: 900;
+  color: var(--accent-bright);
+  text-shadow: 
+    0 0 25px rgba(69,230,168,.7),
+    3px 3px 0 rgba(0,0,0,.4);
+  transform: rotate(-1.5deg);
+  font-style: normal;
+}
+
+.line1Text, .line2Text{
+  font-size: 36px;
+  line-height: 1.1;
+  margin: 4px 0;
+  color: var(--accent-mint);
+  text-shadow: 
+    0 0 20px rgba(78,205,196,.6),
+    2px 2px 0 rgba(0,0,0,.3);
+  font-weight: 800;
+  transform: rotate(0.8deg);
+}
+
+.line2Text{
+  transform: rotate(-0.5deg);
+  margin-left: 20px; /* 第二行略微缩进 */
+}
+
+/* 底部信息区域 - 完全匹配原设计 */
+.footerArea{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 200px;
+  background: rgba(250,250,250,.98);
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 0 0 40px 40px;
+}
+
+/* 底部区域样式 - 完全匹配原设计 */
+.footerContent{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.footerTop{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.footerLeft{
+  flex: 1;
+}
+
+.footerTitle{
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent-mint);
+  margin: 0 0 8px;
+  letter-spacing: 0.5px;
+}
+
+.footerSubtitle{
+  font-size: 16px;
+  font-style: italic;
+  color: var(--accent-mint);
+  margin: 0 0 12px;
+  opacity: 0.9;
+}
+
+.footerDesc{
+  font-size: 14px;
+  color: rgba(0,0,0,.75);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.footerLogo{
+  width: 80px;
+  height: 80px;
+  background: rgba(78,205,196,.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(78,205,196,.3);
+}
+
+.logoIcon{
+  width: 40px;
+  height: 40px;
+  background: var(--gradient-pink);
+  border-radius: 50%;
+}
+
+/* 预览缩放 */
+/* Preview sizing: avoid transform-created blank space by using a fixed-height viewport */
+.previewBox{
+  width: 540px;
+  height: 594px; /* 1080 * 0.55 */
+  overflow: hidden;
+  border-radius: 20px;
+
+  /* center poster horizontally inside the card */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.previewInner{
+  width: 540px;
+  height: 1080px;
+  transform: scale(.55);
+  transform-origin: top center;
+}
+
+@media (max-width: 900px){
+  .previewBox{
+    width: 540px;
+    height: 410px; /* 1080 * 0.38 */
+  }
+  .previewInner{ transform: scale(.38); transform-origin: top center; }
+}
+
+/* 响应式调整 */
+@media (max-width: 600px){
+  .container{padding: 20px 16px 60px}
+  .hero{gap: 16px}
+  .h1{font-size: 32px}
+  .shareCard{
+    width: 360px; 
+    height: 720px;
+  }
+  .textOverlay{
+    top: 40px;
+    left: 25px;
+    right: 25px;
+  }
+  .bigName{font-size: 36px}
+  .line1Text, .line2Text{font-size: 24px}
+  .footerArea{height: 140px; padding: 20px}
+}
+
+/* 添加平滑过渡效果 */
+.shareCard{
+  transition: all 0.3s ease;
+}
+
+.mountainImg{
+  transition: filter 0.3s ease;
+}
+
+/* 文字样式增强 */
+.bigName, .line1Text, .line2Text{
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}

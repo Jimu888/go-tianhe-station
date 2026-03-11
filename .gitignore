@@ -1,0 +1,9 @@
+# OS
+.DS_Store
+__MACOSX/
+
+# Local scripts
+*.bat
+
+# Dev
+original-designs/

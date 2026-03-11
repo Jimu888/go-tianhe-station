@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>海报生成器</title>
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/poster.css" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <!-- 左侧：预览 -->
+      <div class="card pad" id="export">
+        <h2 style="margin:0 0 10px; font-size:18px;">预览</h2>
+        <div class="shareWrap">
+          <div class="previewBox">
+            <div class="previewInner">
+              <div class="shareCard" id="shareCard">
+                <img class="posterImg" id="posterImg" src="./assets/noname/1.jpg" alt="poster" />
+                <div class="nameOverlay" id="nameText">章人丹</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：两个小玻璃卡片（参考图风格） -->
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        
+        <!-- 卡片1：输入名字 -->
+        <div class="card pad">
+          <h1 class="h1" style="font-size:24px; margin:0 0 8px;">生成你的海报</h1>
+          <p class="sub" style="margin:0 0 10px;">只填名字。底图由系统随机分配。</p>
+
+          <div class="field" style="margin-top:10px;">
+            <label>昵称</label>
+            <input id="nameInput" type="text" placeholder="比如：章人丹" maxlength="16" />
+          </div>
+        </div>
+
+        <!-- 卡片2：文案参考 + 保存按钮（保存按钮放这里下面） -->
+        <div class="card pad">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <h2 style="margin:0; font-size:16px; letter-spacing:.2px;">文案参考</h2>
+            <button class="btn secondary" id="btnCopy" type="button" style="padding:10px 12px;">复制</button>
+          </div>
+          <textarea id="copyText" rows="5" style="margin-top:10px; resize:none;">世界很大，别把自己困在一站。
+天河路站 · The Portal to Freedom.
+通往「自由」的传送门。</textarea>
+          <div class="btnrow" style="margin-top:14px;">
+            <button class="btn" id="btnDownload" type="button">保存海报</button>
+          </div>
+          <p class="sub" style="margin:10px 0 0; opacity:.75;">这段不写进海报，只是给用户发朋友圈/推文用。</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="./js/trophy.js"></script>
+</body>
+</html>
