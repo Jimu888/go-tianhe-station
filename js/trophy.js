@@ -54,10 +54,25 @@ const exportPosterImg = byId('exportPosterImg')
 const exportNameText = byId('exportNameText')
 const exportNoText = byId('exportNoText')
 const debugInfo = byId('debugInfo')
+const statusBar = byId('statusBar')
 
 function normalizeText(s){
   return (s ?? '').toString().trim().slice(0, 16)
 }
+
+function setStatus(msg, kind='info'){
+  if(!statusBar) return
+  statusBar.style.display = msg ? 'block' : 'none'
+  statusBar.textContent = msg || ''
+  const colors = {
+    info:  'rgba(255,255,255,.06)',
+    ok:    'rgba(159,214,255,.10)',
+    warn:  'rgba(255,200,120,.10)',
+    error: 'rgba(255,120,120,.10)',
+  }
+  statusBar.style.background = colors[kind] || colors.info
+}
+
 
 function setNameTextOnly(){
   const name = normalizeText(nameInput.value) || '川网GO地铁'
@@ -261,9 +276,24 @@ async function downloadPNG(){
 
   btnDownload.disabled = true
   btnDownload.textContent = '抽取中...'
+  setStatus('正在验证并领取中…', 'info')
 
   try{
     const res = await claimCard(name)
+
+    if (res?.alreadyClaimed) {
+      if (res.reason === 'device') {
+        setStatus('你已在本设备领取过：已为你重新生成并下载同一张卡（编号不变）。', 'warn')
+      } else if (res.reason === 'phone') {
+        setStatus('该手机号已领取过：已为你找回并重新生成下载（编号不变）。', 'warn')
+      } else {
+        setStatus('你已领取过：已为你重新生成下载（编号不变）。', 'warn')
+      }
+      alert('你已领取过，本次为你重新下载同一张卡（编号不变）')
+    } else {
+      setStatus('领取成功！正在生成图片…', 'ok')
+      alert('领取成功！正在生成图片…')
+    }
 
     // Update preview to the assigned card
     // Update export target (single source of truth)
@@ -295,8 +325,11 @@ async function downloadPNG(){
       if (openState) openState.style.display = 'block'
     }
 
+    setStatus('图片已生成，开始下载…', 'ok')
+
     canvas.toBlob((blob)=>{
       if(!blob){
+        setStatus('导出失败，请重试', 'error')
         alert('导出失败，请重试')
         return
       }
@@ -310,10 +343,14 @@ async function downloadPNG(){
       a.click()
       a.remove()
       setTimeout(()=>URL.revokeObjectURL(url), 3000)
+
+      setStatus('下载已开始（如被浏览器拦截，请允许下载）。', 'ok')
+      alert('已开始下载（如被浏览器拦截，请允许下载）')
     }, 'image/png')
 
   } catch(e){
     console.error(e)
+    setStatus('领取失败：' + (e?.message || 'unknown'), 'error')
     alert('领取失败：' + (e?.message || 'unknown'))
   } finally {
     btnDownload.disabled = false
