@@ -142,12 +142,12 @@
   position:absolute;
   left: 46px;
   top: 800px;
-  z-index: 5;
+  z-index: 50;
   cursor: grab;
-}
-  font-weight: 900;
-  font-size: 64px;
-  letter-spacing: 1px;
+
+  font-weight: 800;
+  font-size: 54px;
+  letter-spacing: .5px;
 
   /* match spec */
   color: #979595;
@@ -163,12 +163,13 @@
   position:absolute;
   left: 360px;
   top: 800px;
-  z-index: 5;
+  z-index: 50;
   cursor: grab;
-}
-  font-weight: 800;
-  font-size: 28px;
-  letter-spacing: 0.5px;
+
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: .2px;
+
   color: #979595;
   text-shadow: none;
   font-family: "PingFang SC", "PingFangSC-Regular", "PingFang SC Regular", var(--sans);
