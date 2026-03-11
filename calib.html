@@ -90,6 +90,11 @@
         <div class="row" style="gap:16px">
           <div>
             <div class="muted" style="margin-bottom:6px">调名字</div>
+            <div class="row" style="margin:6px 0 10px; gap:8px">
+              <button class="btn k" data-fs="name" data-dfs="-1">A-</button>
+              <button class="btn k" data-fs="name" data-dfs="1">A+</button>
+              <button class="btn k" data-fsstep="name">fs+1</button>
+            </div>
             <div class="grid">
               <button class="btn k" data-t="name" data-dx="0" data-dy="-1">↑</button><div></div><button class="btn k" data-step="name">+1</button>
               <button class="btn k" data-t="name" data-dx="-1" data-dy="0">←</button><button class="btn k" data-t="name" data-dx="0" data-dy="1">↓</button><button class="btn k" data-t="name" data-dx="1" data-dy="0">→</button>
@@ -97,6 +102,11 @@
           </div>
           <div>
             <div class="muted" style="margin-bottom:6px">调编号</div>
+            <div class="row" style="margin:6px 0 10px; gap:8px">
+              <button class="btn k" data-fs="no" data-dfs="-1">A-</button>
+              <button class="btn k" data-fs="no" data-dfs="1">A+</button>
+              <button class="btn k" data-fsstep="no">fs+1</button>
+            </div>
             <div class="grid">
               <button class="btn k" data-t="no" data-dx="0" data-dy="-1">↑</button><div></div><button class="btn k" data-step="no">+1</button>
               <button class="btn k" data-t="no" data-dx="-1" data-dy="0">←</button><button class="btn k" data-t="no" data-dx="0" data-dy="1">↓</button><button class="btn k" data-t="no" data-dx="1" data-dy="0">→</button>
@@ -125,6 +135,7 @@
   const stage = $('stage')
 
   let step = { name: 1, no: 1 }
+  let fsStep = { name: 1, no: 1 }
   let allCfg = {}
 
   function px(n){ return Math.round(n) + 'px' }
@@ -215,6 +226,22 @@
     if (stepKey){
       step[stepKey] = step[stepKey]===1 ? 10 : 1
       b.textContent = '+'+step[stepKey]
+    }
+
+    const fsStepKey = b.getAttribute('data-fsstep')
+    if (fsStepKey){
+      fsStep[fsStepKey] = fsStep[fsStepKey]===1 ? 4 : 1
+      b.textContent = 'fs+'+fsStep[fsStepKey]
+    }
+
+    const fsTarget = b.getAttribute('data-fs')
+    if (fsTarget){
+      const dfs = Number(b.getAttribute('data-dfs'))
+      const tgt = fsTarget==='no' ? noEl : nameEl
+      const cur = parseFloat(getComputedStyle(tgt).fontSize)
+      const next = Math.max(10, cur + dfs * fsStep[fsTarget])
+      tgt.style.fontSize = px(next)
+      refreshOut()
     }
 
     const t = b.getAttribute('data-t')
