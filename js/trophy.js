@@ -82,17 +82,36 @@ function applyOverlayLayout(cardTypeId){
   const nb = cfg.nameBox
   const xb = cfg.noBox
 
-  nameText.style.left = Math.round(nb.x * sx) + 'px'
-  nameText.style.top  = Math.round(nb.y * sy) + 'px'
-  noText.style.left   = Math.round(xb.x * sx) + 'px'
-  noText.style.top    = Math.round(xb.y * sy) + 'px'
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  // Raw positions (can be negative in calibrated data)
+  let nameLeft = nb.x * sx
+  let nameTop  = nb.y * sy
+  let noLeft   = xb.x * sx
+  let noTop    = xb.y * sy
+
+  // Clamp into visible canvas
+  nameLeft = clamp(nameLeft, 0, cw - 10)
+  nameTop  = clamp(nameTop, 0, ch - 10)
+  noLeft   = clamp(noLeft, 0, cw - 10)
+  noTop    = clamp(noTop, 0, ch - 10)
+
+  nameText.style.left = Math.round(nameLeft) + 'px'
+  nameText.style.top  = Math.round(nameTop) + 'px'
+  noText.style.left   = Math.round(noLeft) + 'px'
+  noText.style.top    = Math.round(noTop) + 'px'
 
   // Font sizing from box height
-  // Slightly smaller to match the provided samples
-  const nameSize = Math.max(16, Math.min(72, Math.round(nb.h * sy * 0.55)))
-  const noSize = Math.max(12, Math.min(40, Math.round(xb.h * sy * 0.34)))
+  const nameSize = Math.max(16, Math.min(72, Math.round((nb.h || 420) * sy * 0.55)))
+  const noSize = Math.max(12, Math.min(40, Math.round((xb.h || 200) * sy * 0.34)))
   nameText.style.fontSize = nameSize + 'px'
   noText.style.fontSize = noSize + 'px'
+
+  // Force visible
+  nameText.style.visibility = 'visible'
+  noText.style.visibility = 'visible'
+  nameText.style.opacity = '1'
+  noText.style.opacity = '1'
 }
 
 async function claimCard(name){
