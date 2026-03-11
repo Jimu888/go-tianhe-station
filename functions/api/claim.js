@@ -29,7 +29,7 @@ function normalizeName(s) {
 
 function padNo(n) {
   const s = String(n)
-  return s.length >= 4 ? s : '0'.repeat(4 - s.length) + s
+  return s.length >= 5 ? s : '0'.repeat(5 - s.length) + s
 }
 
 async function ensureSchema(db) {
@@ -143,7 +143,7 @@ export async function onRequestPost(context) {
         test: true,
         name,
         cardTypeId,
-        cardNo: `#TEST${String(cardTypeId).padStart(2,'0')}`,
+        cardNo: `#${padNo(cardTypeId)}`,
         image: `/assets/cards/${cardTypeId}.jpg`,
       })
     }

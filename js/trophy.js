@@ -387,7 +387,7 @@ function setupCalibMode(){
   nameText.style.zIndex = '50'
   noText.style.zIndex = '50'
 
-  noText.textContent = '#0001'
+  noText.textContent = '#00001'
   nameText.textContent = normalizeText(nameInput.value) || '章人丹'
 
   ensureImageLoaded(posterImg).then(async ()=>{
