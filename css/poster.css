@@ -144,7 +144,8 @@
 @keyframes cardSlideOut{
   0%{ opacity:0; transform: translateY(22px) rotateX(16deg) scale(.98); filter: blur(1px); }
   45%{ opacity:1; transform: translateY(0) rotateX(0deg) scale(1); filter: blur(0px); }
-  100%{ opacity:1; transform: translateY(-6px) rotateX(0deg) scale(1); }
+  /* end at 0 so preview == exported image (no persistent offset) */
+  100%{ opacity:1; transform: translateY(0) rotateX(0deg) scale(1); }
 }
 
 /* Name/No overlays are now positioned per-card via configs/cards.json */
