@@ -21,8 +21,8 @@
 
     /* HD stage */
     .stage{position:relative;width:1080px;height:2160px;border-radius:80px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.35)}
-    .viewport{width:708px;height:980px;overflow:auto;display:flex;justify-content:center;padding:10px}
-    .inner{transform:none;transform-origin:top center}
+    .viewport{width:100%;height:calc(100vh - 170px);min-height:720px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:10px}
+    .inner{transform:scale(var(--zoom, .55));transform-origin:top center}
 
     img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
 
@@ -54,7 +54,10 @@
           <div class="title">自由卡校准（HD 1080×2160）</div>
           <div class="muted">拖动名字/编号；或用按钮微调。Alt=调编号；Shift=10px。复制 JSON 或下载合并 cards.json。</div>
         </div>
-        <div class="muted">如果你看到的底图不更新，请 Ctrl+F5</div>
+        <div style="min-width:260px;">
+          <div class="muted" style="margin-bottom:6px;">缩放（只影响显示，不影响输出）</div>
+          <input id="zoom" type="range" min="0.30" max="1" step="0.01" value="0.55" />
+        </div>
       </div>
 
       <div class="viewport card">
@@ -136,6 +139,16 @@
   const cardSel = $('cardSel')
   const nameInput = $('nameInput')
   const out = $('out')
+  const zoomEl = $('zoom')
+
+  let ZOOM = 0.55
+  document.documentElement.style.setProperty('--zoom', ZOOM)
+  if (zoomEl) {
+    zoomEl.addEventListener('input', ()=>{
+      ZOOM = parseFloat(zoomEl.value || '0.55')
+      document.documentElement.style.setProperty('--zoom', ZOOM)
+    })
+  }
 
   let step = { name: 1, no: 1 }
   let fsStep = { name: 1, no: 1 }
@@ -179,7 +192,7 @@
       e.preventDefault()
       const p = xy(el)
       start={x:e.clientX,y:e.clientY,left:p.left,top:p.top}
-      const mm=(ev)=>{ if(!start) return; set(el, start.left+(ev.clientX-start.x), start.top+(ev.clientY-start.y)); refreshOut() }
+      const mm=(ev)=>{ if(!start) return; set(el, start.left+(ev.clientX-start.x)/ZOOM, start.top+(ev.clientY-start.y)/ZOOM); refreshOut() }
       const mu=()=>{ window.removeEventListener('mousemove',mm); window.removeEventListener('mouseup',mu); start=null }
       window.addEventListener('mousemove',mm)
       window.addEventListener('mouseup',mu)
