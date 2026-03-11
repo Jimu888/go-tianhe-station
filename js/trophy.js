@@ -37,16 +37,20 @@ function normalizeText(s){
   return (s ?? '').toString().trim().slice(0, 16)
 }
 
-function fitNamePreview(){
+function setNameTextOnly(){
   const name = normalizeText(nameInput.value) || '章人丹'
   nameText.textContent = name
+  if (exportNameText) exportNameText.textContent = name
+}
 
+function autoFitName(nameEl, basePx){
+  const name = nameEl.textContent || ''
   const len = name.length
-  let size = 64
-  if (len >= 10) size = 44
-  else if (len >= 8) size = 50
-  else if (len >= 6) size = 56
-  nameText.style.fontSize = size + 'px'
+  let scale = 1
+  if (len >= 10) scale = 0.70
+  else if (len >= 8) scale = 0.78
+  else if (len >= 6) scale = 0.86
+  nameEl.style.fontSize = Math.round(basePx * scale) + 'px'
 }
 
 function getTurnstileToken(){
@@ -83,31 +87,28 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   const nb = cfg.nameBox
   const xb = cfg.noBox
 
-  // position: allow negative (as calibrated) BUT keep within a small safe range to avoid full disappearance
+  // Use calibrated coordinates directly (allow negatives), only clamp extreme values
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
-  const safeMinX = -40
-  const safeMinY = -40
-
   let nameLeft = nb.x * sx
   let nameTop  = nb.y * sy
   let noLeft   = xb.x * sx
   let noTop    = xb.y * sy
 
-  nameLeft = clamp(nameLeft, safeMinX, cw - 10)
-  nameTop  = clamp(nameTop, safeMinY, ch - 10)
-  noLeft   = clamp(noLeft, safeMinX, cw - 10)
-  noTop    = clamp(noTop, safeMinY, ch - 10)
+  nameLeft = clamp(nameLeft, -220, cw + 220)
+  nameTop  = clamp(nameTop, -220, ch + 220)
+  noLeft   = clamp(noLeft, -220, cw + 220)
+  noTop    = clamp(noTop, -220, ch + 220)
 
   nameEl.style.left = Math.round(nameLeft) + 'px'
   nameEl.style.top  = Math.round(nameTop) + 'px'
   noEl.style.left   = Math.round(noLeft) + 'px'
   noEl.style.top    = Math.round(noTop) + 'px'
 
-  // font sizes derived from calibrated heights
-  const nameSize = Math.max(14, Math.min(72, Math.round((nb.h || 420) * sy * 0.55)))
-  const noSize = Math.max(12, Math.min(40, Math.round((xb.h || 200) * sy * 0.34)))
-  nameEl.style.fontSize = nameSize + 'px'
-  noEl.style.fontSize = noSize + 'px'
+  // font sizes derived from calibrated heights (trust h)
+  const nameBase = Math.max(14, Math.min(90, Math.round((nb.h || 420) * sy * 0.85)))
+  const noBase = Math.max(12, Math.min(60, Math.round((xb.h || 200) * sy * 0.85)))
+  autoFitName(nameEl, nameBase)
+  noEl.style.fontSize = noBase + 'px'
 
   nameEl.style.display = 'block'
   noEl.style.display = 'block'
@@ -263,7 +264,10 @@ async function copyCopyText(){
   }
 }
 
-nameInput.addEventListener('input', fitNamePreview)
+nameInput.addEventListener('input', ()=>{
+  setNameTextOnly()
+  // if we already have a layout applied, keep current font size (do not override here)
+})
 btnDownload.addEventListener('click', downloadPNG)
 btnCopy.addEventListener('click', copyCopyText)
 
@@ -459,7 +463,7 @@ function setupCalibMode(){
 
 // init
 loadCardConfigs().catch(()=>{})
-fitNamePreview()
+setNameTextOnly()
 
 // start in "closed" state
 try{
