@@ -62,7 +62,10 @@ let cardConfigs = null
 
 async function loadCardConfigs(){
   if (cardConfigs) return cardConfigs
-  const r = await fetch('/configs/cards.json?v=' + Date.now(), { cache: 'no-store' })
+  const r = await fetch('/configs/cards.json?v=' + Date.now(), {
+    cache: 'no-store',
+    headers: { 'cache-control': 'no-cache' },
+  })
   const t = await r.text()
   try { cardConfigs = JSON.parse(t) } catch { cardConfigs = null }
   return cardConfigs
