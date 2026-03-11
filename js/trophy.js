@@ -41,7 +41,11 @@ async function claimCard(name){
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ name, cfTurnstileToken }),
   })
-  const data = await r.json()
+
+  const text = await r.text()
+  let data
+  try { data = JSON.parse(text) } catch { data = null }
+  if (!data) throw new Error('服务器返回异常，请稍后重试')
   if (!data?.ok) throw new Error(data?.error || 'claim failed')
   return data
 }

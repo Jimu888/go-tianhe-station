@@ -65,19 +65,25 @@ export default {
       const vr = await v.json()
       if (!vr?.success) return bad('Human verification failed', 403)
 
-      const id = env.CLAIM_DO.idFromName('global')
-      const stub = env.CLAIM_DO.get(id)
-      const r = await stub.fetch('https://do/claim', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-client-ip': ip },
-        body: JSON.stringify({ name }),
-      })
-      const data = await r.json()
-      return json(data, { status: r.status })
+      try {
+        const id = env.CLAIM_DO.idFromName('global')
+        const stub = env.CLAIM_DO.get(id)
+        const r = await stub.fetch('https://do/claim', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-client-ip': ip },
+          body: JSON.stringify({ name }),
+        })
+        const text = await r.text()
+        let data
+        try { data = JSON.parse(text) } catch { data = { ok: false, error: 'Bad backend response', raw: text?.slice?.(0, 200) } }
+        return json(data, { status: r.status })
+      } catch (e) {
+        return bad('Server error', 500)
+      }
     }
 
-    // fallthrough to static assets
-    return env.ASSETS.fetch(request)
+    // fallthrough to static assets (Pages will serve them)
+    return fetch(request)
   },
 }
 
