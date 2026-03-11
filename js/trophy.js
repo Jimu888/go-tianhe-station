@@ -88,8 +88,9 @@ function applyOverlayLayout(cardTypeId){
   noText.style.top    = Math.round(xb.y * sy) + 'px'
 
   // Font sizing from box height
-  const nameSize = Math.max(18, Math.min(84, Math.round(nb.h * sy * 0.70)))
-  const noSize = Math.max(14, Math.min(48, Math.round(xb.h * sy * 0.42)))
+  // Slightly smaller to match the provided samples
+  const nameSize = Math.max(16, Math.min(72, Math.round(nb.h * sy * 0.55)))
+  const noSize = Math.max(12, Math.min(40, Math.round(xb.h * sy * 0.34)))
   nameText.style.fontSize = nameSize + 'px'
   noText.style.fontSize = noSize + 'px'
 }
