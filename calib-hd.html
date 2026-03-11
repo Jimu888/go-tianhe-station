@@ -194,10 +194,12 @@
   renderCard.style.left = '-4000px'
   renderCard.style.top = '0'
   renderCard.style.zIndex = '-1'
+  // avoid duplicate IDs confusing libraries
+  renderCard.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'))
   document.body.appendChild(renderCard)
-  const rImg = renderCard.querySelector('#exportPosterImg')
-  const rName = renderCard.querySelector('#exportNameText')
-  const rNo = renderCard.querySelector('#exportNoText')
+  const rImg = renderCard.querySelector('.posterImg')
+  const rName = renderCard.querySelector('.nameOverlay')
+  const rNo = renderCard.querySelector('.noOverlay')
 
   function syncToRenderCard(){
     rImg.src = img.src
