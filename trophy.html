@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="./css/style.css" />
   <link rel="stylesheet" href="./css/poster.css" />
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <meta name="referrer" content="no-referrer" />
 </head>
 <body>
@@ -59,7 +60,7 @@
           </div>
         </div>
 
-        <!-- 卡片2：文案参考 + 保存按钮（保存按钮放这里下面） -->
+        <!-- 卡片2：文案参考 + 人机校验 + 保存按钮（保存按钮放这里下面） -->
         <div class="card pad">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
             <h2 style="margin:0; font-size:16px; letter-spacing:.2px;">文案参考</h2>
@@ -68,6 +69,10 @@
           <textarea id="copyText" rows="5" style="margin-top:10px; resize:none;">世界很大，别把自己困在一站。
 天河路站 · The Portal to Freedom.
 通往「自由」的传送门。</textarea>
+          <div style="margin-top:12px;">
+            <div class="cf-turnstile" data-sitekey="REPLACE_WITH_YOUR_TURNSTILE_SITEKEY" data-theme="dark"></div>
+          </div>
+
           <div class="btnrow" style="margin-top:14px;">
             <button class="btn" id="btnDownload" type="button">保存卡片</button>
           </div>

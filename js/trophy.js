@@ -28,11 +28,18 @@ function fitNamePreview(){
   nameText.style.fontSize = size + 'px'
 }
 
+function getTurnstileToken(){
+  // Turnstile puts token into a hidden input named 'cf-turnstile-response'
+  const el = document.querySelector('input[name="cf-turnstile-response"]')
+  return (el && el.value) ? el.value : ''
+}
+
 async function claimCard(name){
+  const cfTurnstileToken = getTurnstileToken()
   const r = await fetch('/api/claim', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, cfTurnstileToken }),
   })
   const data = await r.json()
   if (!data?.ok) throw new Error(data?.error || 'claim failed')
@@ -54,6 +61,12 @@ async function downloadPNG(){
   if(!name){
     alert('请先输入名字')
     nameInput.focus()
+    return
+  }
+
+  // must have turnstile token
+  if (!getTurnstileToken()) {
+    alert('请先完成验证（人机校验）')
     return
   }
 

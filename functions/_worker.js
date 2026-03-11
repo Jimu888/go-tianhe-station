@@ -4,7 +4,11 @@
 // 2) limited card deck distribution (no oversell)
 //
 // Routes:
-// POST /api/claim  { name }
+// POST /api/claim  { name, cfTurnstileToken }
+//
+// Anti-abuse (方案1):
+// - Cloudflare Turnstile verification (requires env.TURNSTILE_SECRET)
+// - Rate limit per IP (handled inside Durable Object)
 
 function json(data, init = {}) {
   return new Response(JSON.stringify(data), {
@@ -43,11 +47,29 @@ export default {
       const name = normalizeName(body?.name)
       if (!name) return bad('Name required')
 
+      // Turnstile verify
+      const token = (body?.cfTurnstileToken ?? '').toString()
+      if (!token) return bad('Turnstile token required')
+      if (!env.TURNSTILE_SECRET) return bad('Server not configured (TURNSTILE_SECRET missing)', 500)
+
+      const ip = request.headers.get('CF-Connecting-IP') || ''
+      const form = new FormData()
+      form.set('secret', env.TURNSTILE_SECRET)
+      form.set('response', token)
+      if (ip) form.set('remoteip', ip)
+
+      const v = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        body: form,
+      })
+      const vr = await v.json()
+      if (!vr?.success) return bad('Human verification failed', 403)
+
       const id = env.CLAIM_DO.idFromName('global')
       const stub = env.CLAIM_DO.get(id)
       const r = await stub.fetch('https://do/claim', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', 'x-client-ip': ip },
         body: JSON.stringify({ name }),
       })
       const data = await r.json()
@@ -73,6 +95,11 @@ export class ClaimDO {
 
     const { name } = await request.json()
 
+    // Rate limit per IP: 1 claim / 30 seconds
+    const ip = request.headers.get('x-client-ip') || 'unknown'
+    const ipKey = `ip:${ip}`
+    const now = Date.now()
+
     // Config (from PDF): limited totals = 12 cards
     const unlimited = [1, 2, 4, 5, 6, 7, 8]
     const limitedDeckRaw = [
@@ -84,6 +111,12 @@ export class ClaimDO {
     ]
 
     const result = await this.state.storage.transaction(async (tx) => {
+      const last = (await tx.get(ipKey)) ?? 0
+      if (now - last < 30_000) {
+        return { rateLimited: true, retryAfterMs: 30_000 - (now - last) }
+      }
+      await tx.put(ipKey, now)
+
       let nextNo = (await tx.get('nextNo')) ?? 1
       let deck = (await tx.get('limitedDeck'))
       let idx = (await tx.get('limitedIdx')) ?? 0
@@ -111,7 +144,10 @@ export class ClaimDO {
       return { cardTypeId, cardNo }
     })
 
-    // image mapping: default to /assets/cards/{id}.jpg (you will replace with new set)
+    if (result.rateLimited) {
+      return json({ ok: false, error: 'Too many requests', retryAfterMs: result.retryAfterMs }, { status: 429 })
+    }
+
     const image = `/assets/cards/${result.cardTypeId}.jpg`
 
     return json({
