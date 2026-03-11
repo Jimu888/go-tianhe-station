@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.0.19/400.css" />
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <meta name="referrer" content="no-referrer" />
 </head>
 <body>
@@ -70,17 +71,11 @@
         <div class="card pad">
           <div class="field" style="margin-top:10px;">
             <label>手机号</label>
-            <input id="phoneInput" type="tel" placeholder="11位手机号" maxlength="11" inputmode="numeric" />
+            <input id="phoneInput" type="tel" placeholder="11位手机号（用于找回/防重复领取）" maxlength="11" inputmode="numeric" />
           </div>
 
-          <div style="margin-top:10px; display:grid; grid-template-columns: 1fr 140px; gap:10px;">
-            <div class="field" style="margin:0;">
-              <label>验证码</label>
-              <input id="codeInput" type="tel" placeholder="6位验证码" maxlength="6" inputmode="numeric" />
-            </div>
-            <div style="display:flex; flex-direction:column; justify-content:flex-end;">
-              <button class="btn secondary" id="btnSendCode" type="button" style="height:42px;">发送验证码</button>
-            </div>
+          <div style="margin-top:12px;">
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAACpFsB4Kr7ny-pF4" data-theme="dark"></div>
           </div>
 
           <div class="btnrow" style="margin-top:14px;">

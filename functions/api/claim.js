@@ -1,8 +1,8 @@
 // Pages Functions route: POST /api/claim
 // Uses:
+// - env.TURNSTILE_SECRET
 // - env.DB (D1 binding)
-// - SMS verification via D1 (sms_codes + phone_claims)
-//   and Aliyun SMS send endpoint /api/sms/send
+// Phone binding (no SMS): phone_hash -> (card_no_int, card_type). Same phone returns same card/number.
 
 const UNLIMITED = [1, 2, 4, 5, 6, 7, 8]
 const LIMITED_INIT = [
@@ -42,24 +42,15 @@ async function sha256Hex(s) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-async function verifySMSCode(db, env, phone, code) {
-  const row = await db.prepare('SELECT code_hash, expires_ms FROM sms_codes WHERE phone = ?;').bind(phone).first()
-  if (!row) return { ok: false, error: '请先获取验证码' }
-  if (Date.now() > (row.expires_ms || 0)) return { ok: false, error: '验证码已过期，请重新获取' }
-
-  const salt = (env.SMS_CODE_SALT || 'salt').toString()
-  const want = await sha256Hex(`${phone}|${code}|${salt}`)
-  if (want !== row.code_hash) return { ok: false, error: '验证码不正确' }
-
-  // one-time use: delete after success
-  await db.prepare('DELETE FROM sms_codes WHERE phone = ?;').bind(phone).run()
-  return { ok: true }
+async function phoneHash(env, phone) {
+  const salt = (env.PHONE_HASH_SALT || 'salt').toString()
+  return sha256Hex(`${phone}|${salt}`)
 }
 
-async function ensurePhoneNotClaimed(db, phone) {
-  const row = await db.prepare('SELECT phone FROM phone_claims WHERE phone = ?;').bind(phone).first()
-  if (row) return { ok: false, error: '该手机号已领取过' }
-  return { ok: true }
+async function getExistingClaim(db, phoneHash) {
+  return db.prepare('SELECT card_no_int, card_type FROM phone_claims WHERE phone_hash = ?;')
+    .bind(phoneHash)
+    .first()
 }
 
 
@@ -73,8 +64,7 @@ async function ensureSchema(db) {
   await db.exec('CREATE TABLE IF NOT EXISTS meta (id INTEGER PRIMARY KEY, next_no INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS limited (card_type INTEGER PRIMARY KEY, remaining INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS ip_rate (ip TEXT PRIMARY KEY, last_ms INTEGER NOT NULL);')
-  await db.exec('CREATE TABLE IF NOT EXISTS sms_codes (phone TEXT PRIMARY KEY, code_hash TEXT NOT NULL, expires_ms INTEGER NOT NULL, last_send_ms INTEGER NOT NULL);')
-  await db.exec('CREATE TABLE IF NOT EXISTS phone_claims (phone TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
+  await db.exec('CREATE TABLE IF NOT EXISTS phone_claims (phone_hash TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
 
   await db.prepare('INSERT INTO meta (id, next_no) VALUES (1, 1) ON CONFLICT(id) DO NOTHING;').run()
 
@@ -148,8 +138,8 @@ export async function onRequestPost(context) {
 
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown'
 
-  // In test mode: skip SMS + rate limit + inventory + numbering
-  // In normal mode: require SMS code and enforce 1 claim per phone
+  // In test mode: skip Turnstile + rate limit + phone binding + inventory + numbering
+  // In normal mode: require Turnstile + phone binding (idempotent per phone)
 
   try {
     await ensureSchema(env.DB)
@@ -172,17 +162,40 @@ export async function onRequestPost(context) {
       })
     }
 
-    // verify SMS
+    // verify Turnstile
+    const token = (body?.cfTurnstileToken ?? '').toString()
+    if (!token) return bad('Turnstile token required')
+    if (!env.TURNSTILE_SECRET) return bad('Server not configured (TURNSTILE_SECRET missing)', 500)
+
+    const form = new FormData()
+    form.set('secret', env.TURNSTILE_SECRET)
+    form.set('response', token)
+    if (ip) form.set('remoteip', ip)
+
+    const v = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: form,
+    })
+    const vr = await v.json().catch(() => null)
+    if (!vr?.success) return bad('Human verification failed', 403)
+
     const phone = normalizePhone(body?.phone)
-    const code = normalizeCode(body?.code)
     if (!/^1\d{10}$/.test(phone)) return bad('Invalid phone')
-    if (!/^\d{6}$/.test(code)) return bad('Invalid code')
 
-    const notClaimed = await ensurePhoneNotClaimed(env.DB, phone)
-    if (!notClaimed.ok) return bad(notClaimed.error, 403)
-
-    const v = await verifySMSCode(env.DB, env, phone, code)
-    if (!v.ok) return bad(v.error, 403)
+    const ph = await phoneHash(env, phone)
+    const existing = await getExistingClaim(env.DB, ph)
+    if (existing?.card_no_int && existing?.card_type) {
+      const cardNo = `#${padNo(existing.card_no_int)}`
+      return json({
+        ok: true,
+        alreadyClaimed: true,
+        name,
+        cardTypeId: existing.card_type,
+        cardNo,
+        cardNoDisplay: `（编号${cardNo}）`,
+        image: `/assets/cards/${existing.card_type}.jpg`,
+      })
+    }
 
     const rl = await rateLimit(env.DB, ip)
     if (!rl.ok) return bad('Too many requests', 429, { retryAfterMs: rl.retryAfterMs })
@@ -190,15 +203,15 @@ export async function onRequestPost(context) {
     const cardTypeId = await pickCardType(env.DB)
     const cardNoInt = await nextCardNo(env.DB)
 
-    await env.DB.prepare('INSERT INTO phone_claims (phone, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?);')
-      .bind(phone, Date.now(), cardNoInt, cardTypeId)
+    await env.DB.prepare('INSERT INTO phone_claims (phone_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?);')
+      .bind(ph, Date.now(), cardNoInt, cardTypeId)
       .run()
 
     const cardNo = `#${padNo(cardNoInt)}`
     return json({
       ok: true,
+      alreadyClaimed: false,
       name,
-      phone,
       cardTypeId,
       cardNo,
       cardNoDisplay: `（编号${cardNo}）`,
