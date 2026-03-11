@@ -4,6 +4,9 @@ const nameInput = byId('nameInput')
 const btnDownload = byId('btnDownload')
 const btnCopy = byId('btnCopy')
 const copyText = byId('copyText')
+const calibPanel = byId('calibPanel')
+const btnCalibCopy = byId('btnCalibCopy')
+const btnCalibDownload = byId('btnCalibDownload')
 
 const nameText = byId('nameText')
 const noText = byId('noText')
@@ -44,10 +47,13 @@ async function loadCardConfigs(){
   return cardConfigs
 }
 
+let currentCardTypeId = 1
+
 function applyOverlayLayout(cardTypeId){
   if (!cardConfigs) return
   const cfg = cardConfigs[String(cardTypeId)]
   if (!cfg?.nameBox || !cfg?.noBox) return
+  currentCardTypeId = Number(cardTypeId) || currentCardTypeId
 
   const iw = posterImg.naturalWidth || 1
   const ih = posterImg.naturalHeight || 1
@@ -102,6 +108,11 @@ async function ensureImageLoaded(imgEl){
 function isTestMode(){
   const u = new URL(location.href)
   return u.searchParams.get('test') === '1'
+}
+
+function isCalibMode(){
+  const u = new URL(location.href)
+  return u.searchParams.get('calib') === '1'
 }
 
 function getForcedCard(){
@@ -199,6 +210,127 @@ nameInput.addEventListener('input', fitNamePreview)
 btnDownload.addEventListener('click', downloadPNG)
 btnCopy.addEventListener('click', copyCopyText)
 
+function px(n){ return Math.round(n) + 'px' }
+
+function getXY(el){
+  const left = parseFloat(el.style.left || '0')
+  const top = parseFloat(el.style.top || '0')
+  return { left, top }
+}
+
+function setXY(el, left, top){
+  el.style.left = px(left)
+  el.style.top = px(top)
+}
+
+function makeDraggable(el){
+  let start = null
+  el.addEventListener('pointerdown', (e)=>{
+    if (!isCalibMode()) return
+    el.setPointerCapture(e.pointerId)
+    const xy = getXY(el)
+    start = { x: e.clientX, y: e.clientY, left: xy.left, top: xy.top }
+  })
+  el.addEventListener('pointermove', (e)=>{
+    if (!start || !isCalibMode()) return
+    const dx = e.clientX - start.x
+    const dy = e.clientY - start.y
+    setXY(el, start.left + dx, start.top + dy)
+  })
+  const end = ()=>{ start = null }
+  el.addEventListener('pointerup', end)
+  el.addEventListener('pointercancel', end)
+}
+
+function calibToConfig(){
+  if (!cardConfigs) return null
+  const iw = posterImg.naturalWidth || 1
+  const ih = posterImg.naturalHeight || 1
+  const cw = shareCard.clientWidth || 1
+  const ch = shareCard.clientHeight || 1
+  const sx = iw / cw
+  const sy = ih / ch
+
+  const nxy = getXY(nameText)
+  const xxy = getXY(noText)
+
+  const nameH = parseFloat(getComputedStyle(nameText).fontSize) * 1.2
+  const noH = parseFloat(getComputedStyle(noText).fontSize) * 1.2
+
+  return {
+    nameBox: { x: Math.round(nxy.left * sx), y: Math.round(nxy.top * sy), w: 0, h: Math.round(nameH * sy) },
+    noBox: { x: Math.round(xxy.left * sx), y: Math.round(xxy.top * sy), w: 0, h: Math.round(noH * sy) },
+  }
+}
+
+async function copyTextToClipboard(text){
+  try { await navigator.clipboard.writeText(text); return true } catch { return false }
+}
+
+async function onCalibCopy(){
+  const cfg = calibToConfig()
+  if (!cfg) return
+  const payload = { [String(currentCardTypeId)]: cfg }
+  const text = JSON.stringify(payload, null, 2)
+  const ok = await copyTextToClipboard(text)
+  alert(ok ? '已复制（发我即可）' : '复制失败，请手动复制')
+}
+
+function downloadFile(name, content){
+  const blob = new Blob([content], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(()=>URL.revokeObjectURL(url), 2000)
+}
+
+function onCalibDownload(){
+  const cfg = calibToConfig()
+  if (!cfg || !cardConfigs) return
+  const merged = { ...cardConfigs, [String(currentCardTypeId)]: cfg }
+  downloadFile('cards.json', JSON.stringify(merged, null, 2))
+}
+
+function setupCalibMode(){
+  if (!isCalibMode()) return
+  // show open state directly
+  try{ closedState.style.display = 'none'; openState.style.display = 'block' } catch {}
+  shareCard.classList.add('calib')
+  if (calibPanel) calibPanel.style.display = 'block'
+
+  // load specified card
+  const n = parseInt(getForcedCard() || '1', 10)
+  const cardId = (n>=1 && n<=12) ? n : 1
+  posterImg.src = `/assets/cards/${cardId}.jpg`
+  noText.textContent = '#0001'
+  nameText.textContent = normalizeText(nameInput.value) || '章人丹'
+
+  ensureImageLoaded(posterImg).then(async ()=>{
+    await loadCardConfigs().catch(()=>{})
+    applyOverlayLayout(cardId)
+  })
+
+  makeDraggable(nameText)
+  makeDraggable(noText)
+
+  document.addEventListener('keydown', (e)=>{
+    const step = e.shiftKey ? 10 : 1
+    const target = (e.altKey ? noText : nameText)
+    const xy = getXY(target)
+    if (e.key === 'ArrowLeft') setXY(target, xy.left - step, xy.top)
+    if (e.key === 'ArrowRight') setXY(target, xy.left + step, xy.top)
+    if (e.key === 'ArrowUp') setXY(target, xy.left, xy.top - step)
+    if (e.key === 'ArrowDown') setXY(target, xy.left, xy.top + step)
+  })
+
+  if (btnCalibCopy) btnCalibCopy.addEventListener('click', onCalibCopy)
+  if (btnCalibDownload) btnCalibDownload.addEventListener('click', onCalibDownload)
+}
+
 // init
 loadCardConfigs().catch(()=>{})
 fitNamePreview()
@@ -208,3 +340,5 @@ try{
   if (openState) openState.style.display = 'none'
   if (closedState) closedState.style.display = 'flex'
 } catch {}
+
+setupCalibMode()

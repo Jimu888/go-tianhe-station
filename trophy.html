@@ -76,6 +76,15 @@
           <div class="btnrow" style="margin-top:14px;">
             <button class="btn" id="btnDownload" type="button">保存卡片</button>
           </div>
+
+          <!-- Calibration panel (only shown when ?calib=1) -->
+          <div id="calibPanel" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.12);">
+            <div class="sub" style="margin-bottom:10px; opacity:.85;">校准模式：拖动名字/编号到正确位置；方向键微调（Shift=10px）。</div>
+            <div class="btnrow" style="margin-top:10px;">
+              <button class="btn secondary" id="btnCalibCopy" type="button">复制当前卡配置</button>
+              <button class="btn secondary" id="btnCalibDownload" type="button">下载 cards.json（含修改）</button>
+            </div>
+          </div>
           <p class="sub" style="margin:10px 0 0; opacity:.75;">这段不写进海报，只是给用户发朋友圈/推文用。</p>
         </div>
       </div>

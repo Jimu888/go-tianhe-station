@@ -79,6 +79,12 @@
   box-shadow: 0 10px 30px rgba(0,0,0,.22);
 }
 
+/* Calibration helpers */
+.shareCard.calib .nameOverlay,
+.shareCard.calib .noOverlay{ outline: 2px dashed rgba(159,214,255,.55); outline-offset: 6px; }
+.shareCard.calib .nameOverlay:active,
+.shareCard.calib .noOverlay:active{ cursor: grabbing; }
+
 /* Reveal animation (stronger "open box → pull card") */
 .shareCard.revealing{ perspective: 900px; }
 .shareCard.revealing .chest{ animation: chestBounce .45s ease-in-out both; }
@@ -128,7 +134,8 @@
   left: 46px;
   top: 800px;
   z-index: 5;
-
+  cursor: grab;
+}
   font-weight: 900;
   font-size: 64px;
   letter-spacing: 1px;
@@ -146,7 +153,8 @@
   left: 360px;
   top: 800px;
   z-index: 5;
-
+  cursor: grab;
+}
   font-weight: 800;
   font-size: 28px;
   letter-spacing: 0.5px;
