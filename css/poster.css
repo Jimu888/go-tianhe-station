@@ -40,9 +40,9 @@
   justify-content:center;
   gap:18px;
   background:
-    radial-gradient(900px 600px at 50% 25%, rgba(255,255,255,.10), transparent 60%),
-    radial-gradient(900px 600px at 20% 80%, rgba(78,205,196,.12), transparent 55%),
-    linear-gradient(135deg, rgba(9,14,28,.85), rgba(18,24,44,.85));
+    radial-gradient(900px 600px at 50% 20%, rgba(255,255,255,.10), transparent 60%),
+    radial-gradient(900px 600px at 20% 85%, rgba(159,214,255,.10), transparent 55%),
+    linear-gradient(135deg, rgba(8,12,22,.88), rgba(12,18,34,.88));
 }
 
 .closedText{ text-align:center; padding: 0 26px; }
@@ -74,9 +74,9 @@
 .chestLock{
   position:absolute; left:50%; transform:translateX(-50%);
   top:58px; width:38px; height:38px;
-  background: linear-gradient(135deg, rgba(255,107,157,.85), rgba(78,205,196,.85));
+  background: linear-gradient(135deg, rgba(255,255,255,.65), rgba(159,214,255,.85));
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  box-shadow: 0 10px 30px rgba(0,0,0,.22);
 }
 
 /* Reveal animation (stronger "open box → pull card") */
