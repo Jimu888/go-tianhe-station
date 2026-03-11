@@ -79,18 +79,22 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   const cw = cardEl.clientWidth || 1
   const ch = cardEl.clientHeight || 1
 
-  const sx = cw / iw
-  const sy = ch / ih
+  // posterImg uses object-fit: cover. Must account for cover scale + crop offsets.
+  const scale = Math.max(cw / iw, ch / ih)
+  const dw = iw * scale
+  const dh = ih * scale
+  const ox = (cw - dw) / 2
+  const oy = (ch - dh) / 2
 
   const nb = cfg.nameBox
   const xb = cfg.noBox
 
-  // Use calibrated coordinates directly (allow negatives), only clamp extreme values
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
-  let nameLeft = nb.x * sx
-  let nameTop  = nb.y * sy
-  let noLeft   = xb.x * sx
-  let noTop    = xb.y * sy
+
+  let nameLeft = nb.x * scale + ox
+  let nameTop  = nb.y * scale + oy
+  let noLeft   = xb.x * scale + ox
+  let noTop    = xb.y * scale + oy
 
   nameLeft = clamp(nameLeft, -220, cw + 220)
   nameTop  = clamp(nameTop, -220, ch + 220)
@@ -105,9 +109,9 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   noEl.style.left   = Math.round(noLeft) + 'px'
   noEl.style.top    = Math.round(noTop + GLOBAL_NO_Y) + 'px'
 
-  // font sizes: strictly follow calibrated heights
-  const nameFont = Math.max(10, Math.min(120, fontFromCalibH(nb.h || 420, sy)))
-  const noFont = Math.max(10, Math.min(80, fontFromCalibH(xb.h || 200, sy)))
+  // font sizes from calibrated heights (h is in natural-image space)
+  const nameFont = Math.max(10, Math.min(120, Math.round((nb.h || 420) * scale / 1.2)))
+  const noFont = Math.max(10, Math.min(80, Math.round((xb.h || 200) * scale / 1.2)))
   nameEl.style.fontSize = nameFont + 'px'
   noEl.style.fontSize = noFont + 'px'
 
