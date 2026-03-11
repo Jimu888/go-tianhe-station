@@ -149,9 +149,10 @@
   font-size: 64px;
   letter-spacing: 1px;
 
-  /* match sample cards (dusty rose on gray strip) */
-  color: rgba(213,127,146,.95);
-  text-shadow: 0 2px 0 rgba(255,255,255,.22);
+  /* match spec */
+  color: #979595;
+  text-shadow: none;
+  font-family: "PingFang SC", "PingFangSC-Regular", "PingFang SC Regular", var(--sans);
 
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
@@ -168,8 +169,8 @@
   font-weight: 800;
   font-size: 28px;
   letter-spacing: 0.5px;
-  color: rgba(213,127,146,.92);
-  text-shadow: 0 2px 0 rgba(255,255,255,.20);
-  font-family: var(--sans);
+  color: #979595;
+  text-shadow: none;
+  font-family: "PingFang SC", "PingFangSC-Regular", "PingFang SC Regular", var(--sans);
   white-space: nowrap;
 }
