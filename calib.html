@@ -57,7 +57,7 @@
           <div class="stage" id="stage">
             <img id="img" src="/assets/cards/1.jpg" alt="card" />
             <div class="overlay name" id="name">章人丹</div>
-            <div class="overlay no" id="no">#00001</div>
+            <div class="overlay no" id="no">（编号#00001）</div>
           </div>
         </div>
       </div>
@@ -166,7 +166,7 @@
   function loadCard(id){
     img.src = `/assets/cards/${id}.jpg?v=${Date.now()}`
     nameEl.textContent = nameInput.value || '章人丹'
-    noEl.textContent = '#00001'
+    noEl.textContent = '（编号#00001）'
     // default positions
     set(nameEl, 46, 800)
     set(noEl, 360, 800)

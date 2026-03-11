@@ -160,7 +160,7 @@ async function downloadPNG(){
     // Update preview to the assigned card
     posterImg.src = res.image
     nameText.textContent = res.name
-    noText.textContent = res.cardNo
+    noText.textContent = `（编号${res.cardNo}）`
 
     // Ensure configs loaded + image loaded, then apply per-card layout
     await loadCardConfigs().catch(()=>{})
@@ -387,7 +387,7 @@ function setupCalibMode(){
   nameText.style.zIndex = '50'
   noText.style.zIndex = '50'
 
-  noText.textContent = '#00001'
+  noText.textContent = '（编号#00001）'
   nameText.textContent = normalizeText(nameInput.value) || '章人丹'
 
   ensureImageLoaded(posterImg).then(async ()=>{
