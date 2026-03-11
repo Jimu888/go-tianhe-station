@@ -28,6 +28,7 @@
   height:100%;
   object-fit: cover;
   object-position: center;
+  pointer-events: none; /* allow dragging overlays */
 }
 
 /* Closed state (card box) */
@@ -148,8 +149,9 @@
   font-size: 64px;
   letter-spacing: 1px;
 
-  color: rgba(210, 230, 255, .92);
-  text-shadow: 0 2px 0 rgba(0,0,0,.22);
+  /* match sample cards (dusty rose on gray strip) */
+  color: rgba(213,127,146,.95);
+  text-shadow: 0 2px 0 rgba(255,255,255,.22);
 
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
@@ -166,8 +168,8 @@
   font-weight: 800;
   font-size: 28px;
   letter-spacing: 0.5px;
-  color: rgba(210, 230, 255, .86);
-  text-shadow: 0 2px 0 rgba(0,0,0,.20);
-  font-family: var(--mono);
+  color: rgba(213,127,146,.92);
+  text-shadow: 0 2px 0 rgba(255,255,255,.20);
+  font-family: var(--sans);
   white-space: nowrap;
 }

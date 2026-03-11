@@ -8,6 +8,18 @@ const calibPanel = byId('calibPanel')
 const btnCalibCopy = byId('btnCalibCopy')
 const btnCalibDownload = byId('btnCalibDownload')
 
+const btnNameUp = byId('btnNameUp')
+const btnNameDown = byId('btnNameDown')
+const btnNameLeft = byId('btnNameLeft')
+const btnNameRight = byId('btnNameRight')
+const btnNameStep = byId('btnNameStep')
+
+const btnNoUp = byId('btnNoUp')
+const btnNoDown = byId('btnNoDown')
+const btnNoLeft = byId('btnNoLeft')
+const btnNoRight = byId('btnNoRight')
+const btnNoStep = byId('btnNoStep')
+
 const nameText = byId('nameText')
 const noText = byId('noText')
 const posterImg = byId('posterImg')
@@ -297,7 +309,31 @@ function onCalibDownload(){
   downloadFile('cards.json', JSON.stringify(merged, null, 2))
 }
 
+function bindNudgeButtons(){
+  let stepName = 1
+  let stepNo = 1
+
+  if (btnNameStep) btnNameStep.addEventListener('click', ()=>{ stepName = (stepName === 1 ? 10 : 1); btnNameStep.textContent = '+' + stepName })
+  if (btnNoStep) btnNoStep.addEventListener('click', ()=>{ stepNo = (stepNo === 1 ? 10 : 1); btnNoStep.textContent = '+' + stepNo })
+
+  const nudge = (el, dx, dy, step)=>{
+    const xy = getXY(el)
+    setXY(el, xy.left + dx*step, xy.top + dy*step)
+  }
+
+  if (btnNameUp) btnNameUp.addEventListener('click', ()=>nudge(nameText, 0, -1, stepName))
+  if (btnNameDown) btnNameDown.addEventListener('click', ()=>nudge(nameText, 0, 1, stepName))
+  if (btnNameLeft) btnNameLeft.addEventListener('click', ()=>nudge(nameText, -1, 0, stepName))
+  if (btnNameRight) btnNameRight.addEventListener('click', ()=>nudge(nameText, 1, 0, stepName))
+
+  if (btnNoUp) btnNoUp.addEventListener('click', ()=>nudge(noText, 0, -1, stepNo))
+  if (btnNoDown) btnNoDown.addEventListener('click', ()=>nudge(noText, 0, 1, stepNo))
+  if (btnNoLeft) btnNoLeft.addEventListener('click', ()=>nudge(noText, -1, 0, stepNo))
+  if (btnNoRight) btnNoRight.addEventListener('click', ()=>nudge(noText, 1, 0, stepNo))
+}
+
 function setupCalibMode(){
+  bindNudgeButtons()
   if (!isCalibMode()) return
   // show open state directly
   try{ closedState.style.display = 'none'; openState.style.display = 'block' } catch {}
@@ -307,7 +343,8 @@ function setupCalibMode(){
   // load specified card
   const n = parseInt(getForcedCard() || '1', 10)
   const cardId = (n>=1 && n<=12) ? n : 1
-  posterImg.src = `/assets/cards/${cardId}.jpg`
+  // cache-bust so calib always shows newest images
+  posterImg.src = `/assets/cards/${cardId}.jpg?v=${Date.now()}`
 
   // ensure overlays visible
   nameText.style.display = 'block'
