@@ -104,14 +104,13 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   noLeft   = clamp(noLeft, -220, cw + 220)
   noTop    = clamp(noTop, -220, ch + 220)
 
-  // global nudge for name
-  const NAME_NUDGE_X = 20
-  nameEl.style.left = Math.round(nameLeft + NAME_NUDGE_X) + 'px'
+  // Apply global tweak: move all numbers up 10px
+  const GLOBAL_NO_Y = -10
+
+  nameEl.style.left = Math.round(nameLeft) + 'px'
   nameEl.style.top  = Math.round(nameTop) + 'px'
   noEl.style.left   = Math.round(noLeft) + 'px'
-  // global nudge for number
-  const NO_NUDGE_Y = 20
-  noEl.style.top    = Math.round(noTop + NO_NUDGE_Y) + 'px'
+  noEl.style.top    = Math.round(noTop + GLOBAL_NO_Y) + 'px'
 
   // font sizes derived from calibrated heights (trust h)
   const nameBase = Math.max(14, Math.min(90, Math.round((nb.h || 420) * sy * 0.85)))
@@ -300,17 +299,22 @@ async function exportAll12(){
     alert('该功能仅测试模式可用（?test=1）')
     return
   }
+  if (!window.JSZip) {
+    alert('JSZip 未加载，请刷新重试')
+    return
+  }
+
   btnExportAll12.disabled = true
-  if (exportAllHint) { exportAllHint.style.display = 'block'; exportAllHint.textContent = '开始导出...'; }
+  if (exportAllHint) { exportAllHint.style.display = 'block'; exportAllHint.textContent = '开始打包...'; }
 
   try{
     await loadCardConfigs().catch(()=>{})
+    const zip = new JSZip()
 
     for (let i=1; i<=12; i++){
-      if (exportAllHint) exportAllHint.textContent = `导出中：${i}/12`
+      if (exportAllHint) exportAllHint.textContent = `生成中：${i}/12`
       const res = await claimTestCard(name, i)
 
-      // update export target
       exportPosterImg.src = res.image
       exportNameText.textContent = res.name
       exportNoText.textContent = res.cardNoDisplay || `（编号${res.cardNo}）`
@@ -325,30 +329,27 @@ async function exportAll12(){
         logging: false,
       })
 
-      await new Promise((resolve)=>{
-        canvas.toBlob((blob)=>{
-          if(!blob) return resolve()
-          const a = document.createElement('a')
-          const url = URL.createObjectURL(blob)
-          const safeName = res.name.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'_')
-          a.href = url
-          a.download = `test-card-${String(i).padStart(2,'0')}-${safeName}.png`
-          document.body.appendChild(a)
-          a.click()
-          a.remove()
-          setTimeout(()=>URL.revokeObjectURL(url), 2000)
-          resolve()
-        }, 'image/png')
-      })
-
-      // small delay to avoid browser download throttling
-      await new Promise(r=>setTimeout(r, 300))
+      const blob = await new Promise((resolve)=>canvas.toBlob(resolve, 'image/png'))
+      if (!blob) continue
+      zip.file(`card-${String(i).padStart(2,'0')}.png`, blob)
     }
 
-    if (exportAllHint) exportAllHint.textContent = '导出完成（如果浏览器拦截多文件下载，请允许）。'
+    if (exportAllHint) exportAllHint.textContent = '压缩中...'
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
+
+    const a = document.createElement('a')
+    const url = URL.createObjectURL(zipBlob)
+    a.href = url
+    a.download = `cards-12-${Date.now()}.zip`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(()=>URL.revokeObjectURL(url), 4000)
+
+    if (exportAllHint) exportAllHint.textContent = '完成：已生成 ZIP 下载。'
   } catch(e){
     console.error(e)
-    if (exportAllHint) exportAllHint.textContent = '导出失败：' + (e?.message || 'unknown')
+    if (exportAllHint) exportAllHint.textContent = '失败：' + (e?.message || 'unknown')
   } finally {
     btnExportAll12.disabled = false
   }

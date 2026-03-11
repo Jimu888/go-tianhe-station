@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="./css/style.css" />
   <link rel="stylesheet" href="./css/poster.css" />
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <meta name="referrer" content="no-referrer" />
 </head>
@@ -81,7 +82,7 @@
           <!-- Test utilities (only shown when ?test=1) -->
           <div id="testPanel" style="display:none; margin-top:12px;">
             <div class="btnrow">
-              <button class="btn secondary" id="btnExportAll12" type="button">一键导出 12 张（测试）</button>
+              <button class="btn secondary" id="btnExportAll12" type="button">一键导出 12 张（ZIP，测试）</button>
             </div>
             <div class="sub" id="exportAllHint" style="margin-top:8px; opacity:.75; display:none;"></div>
           </div>
@@ -135,6 +136,6 @@
     </div>
   </div>
 
-  <script src="./js/trophy.js?v=35f1d8b"></script>
+  <script src="./js/trophy.js?v=zip12"></script>
 </body>
 </html>
