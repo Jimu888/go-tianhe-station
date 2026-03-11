@@ -138,12 +138,14 @@ export async function onRequestPost(context) {
       if (n >= 1 && n <= 12) cardTypeId = n
       else cardTypeId = (Math.floor(Date.now() / 1000) % 12) + 1
 
+      const cardNo = `#${padNo(cardTypeId)}`
       return json({
         ok: true,
         test: true,
         name,
         cardTypeId,
-        cardNo: `#${padNo(cardTypeId)}`,
+        cardNo,
+        cardNoDisplay: `（编号${cardNo}）`,
         image: `/assets/cards/${cardTypeId}.jpg`,
       })
     }
@@ -154,11 +156,13 @@ export async function onRequestPost(context) {
     const cardTypeId = await pickCardType(env.DB)
     const cardNoInt = await nextCardNo(env.DB)
 
+    const cardNo = `#${padNo(cardNoInt)}`
     return json({
       ok: true,
       name,
       cardTypeId,
-      cardNo: `#${padNo(cardNoInt)}`,
+      cardNo,
+      cardNoDisplay: `（编号${cardNo}）`,
       image: `/assets/cards/${cardTypeId}.jpg`,
     })
   } catch (e) {

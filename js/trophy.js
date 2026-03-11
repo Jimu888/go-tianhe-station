@@ -160,7 +160,7 @@ async function downloadPNG(){
     // Update preview to the assigned card
     posterImg.src = res.image
     nameText.textContent = res.name
-    noText.textContent = `（编号${res.cardNo}）`
+    noText.textContent = res.cardNoDisplay || `（编号${res.cardNo}）`
 
     // Ensure configs loaded + image loaded, then apply per-card layout
     await loadCardConfigs().catch(()=>{})
