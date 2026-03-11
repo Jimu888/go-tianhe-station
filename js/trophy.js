@@ -71,12 +71,13 @@ async function downloadPNG(){
 
     await ensureImageLoaded(posterImg)
 
-    // Reveal animation: show open state and hide closed state
-    openState.style.display = 'block'
+    // Reveal animation: start opening the box first, then show the card
     shareCard.classList.add('revealing')
+    await new Promise(r=>setTimeout(r, 220))
+    openState.style.display = 'block'
 
     // wait for animation to finish before capturing
-    await new Promise(r=>setTimeout(r, 520))
+    await new Promise(r=>setTimeout(r, 900))
 
     const canvas = await html2canvas(shareCard, {
       backgroundColor: null,

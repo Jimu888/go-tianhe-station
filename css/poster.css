@@ -79,16 +79,47 @@
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
 }
 
-/* Reveal animation */
-.shareCard.revealing .closedState{ animation: fadeOut .35s ease forwards; }
-.shareCard.revealing .openState{ display:block !important; animation: flipIn .55s cubic-bezier(.2,.9,.2,1) forwards; }
+/* Reveal animation (stronger "open box → pull card") */
+.shareCard.revealing{ perspective: 900px; }
+.shareCard.revealing .chest{ animation: chestBounce .45s ease-in-out both; }
+.shareCard.revealing .chestLid{ animation: lidOpen .55s cubic-bezier(.2,.9,.2,1) both; }
+.shareCard.revealing .chestGlow{ animation: glowBurst .75s ease-out both; }
+.shareCard.revealing .chestLock{ animation: lockPop .55s ease-out both; }
 
-@keyframes fadeOut{
-  to{ opacity:0; transform: scale(.98); }
+/* closed state fades slightly later, so the lid/glow are visible */
+.shareCard.revealing .closedState{ animation: fadeOut .35s ease forwards; animation-delay: .55s; }
+
+/* card appears as if sliding out */
+.shareCard.revealing .openState{ display:block !important; animation: cardSlideOut .75s cubic-bezier(.12,.9,.18,1) both; }
+
+@keyframes chestBounce{
+  0%{ transform: translateY(0) }
+  30%{ transform: translateY(-6px) }
+  60%{ transform: translateY(2px) }
+  100%{ transform: translateY(0) }
 }
-@keyframes flipIn{
-  from{ opacity:0; transform: translateY(10px) rotateX(18deg); }
-  to{ opacity:1; transform: translateY(0) rotateX(0deg); }
+@keyframes lidOpen{
+  0%{ transform: rotateX(0deg) }
+  70%{ transform: rotateX(-62deg) }
+  100%{ transform: rotateX(-55deg) }
+}
+@keyframes glowBurst{
+  0%{ opacity:.25; transform: scale(.9) }
+  35%{ opacity:1; transform: scale(1.08) }
+  100%{ opacity:.55; transform: scale(1.18) }
+}
+@keyframes lockPop{
+  0%{ transform: translateX(-50%) scale(1) }
+  55%{ transform: translateX(-50%) scale(1.12) }
+  100%{ transform: translateX(-50%) scale(1) }
+}
+@keyframes fadeOut{
+  to{ opacity:0; transform: scale(.985); }
+}
+@keyframes cardSlideOut{
+  0%{ opacity:0; transform: translateY(22px) rotateX(16deg) scale(.98); filter: blur(1px); }
+  45%{ opacity:1; transform: translateY(0) rotateX(0deg) scale(1); filter: blur(0px); }
+  100%{ opacity:1; transform: translateY(-6px) rotateX(0deg) scale(1); }
 }
 
 /* Name position (match sample “章人丹”) */
