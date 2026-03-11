@@ -51,8 +51,9 @@ async function rateLimit(db, ip) {
   const now = Date.now()
   const row = await db.prepare('SELECT last_ms FROM ip_rate WHERE ip = ?;').bind(ip).first()
   const last = row?.last_ms ?? 0
-  if (now - last < 30_000) {
-    return { ok: false, retryAfterMs: 30_000 - (now - last) }
+  // Rate limit: 1 claim per 5 seconds (was 30s)
+  if (now - last < 5_000) {
+    return { ok: false, retryAfterMs: 5_000 - (now - last) }
   }
   await db.prepare('INSERT INTO ip_rate (ip, last_ms) VALUES (?, ?) ON CONFLICT(ip) DO UPDATE SET last_ms = excluded.last_ms;')
     .bind(ip, now)
