@@ -1,7 +1,11 @@
 // Pages Functions advanced mode (_worker.js)
 // Provides:
 // - POST /api/claim
-// - Durable Object ClaimDO (inventory + sequential cardNo)
+// Uses:
+// - Cloudflare Turnstile (env.TURNSTILE_SECRET)
+// - D1 database binding (env.DB)
+//
+// NOTE: We moved off Durable Objects because Pages DO bindings UI may not list classes.
 
 function json(data, init = {}) {
   return new Response(JSON.stringify(data), {
@@ -21,6 +25,90 @@ function normalizeName(s) {
 function padNo(n) {
   const s = String(n)
   return s.length >= 4 ? s : '0'.repeat(4 - s.length) + s
+}
+
+const UNLIMITED = [1, 2, 4, 5, 6, 7, 8]
+const LIMITED_INIT = [
+  [3, 1],
+  [9, 5],
+  [10, 3],
+  [11, 1],
+  [12, 2],
+]
+
+async function ensureSchema(db) {
+  // lightweight schema init (idempotent)
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS meta (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      next_no INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS limited (
+      card_type INTEGER PRIMARY KEY,
+      remaining INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS ip_rate (
+      ip TEXT PRIMARY KEY,
+      last_ms INTEGER NOT NULL
+    );
+  `)
+
+  // seed meta
+  await db.prepare('INSERT INTO meta (id, next_no) VALUES (1, 1) ON CONFLICT(id) DO NOTHING;').run()
+
+  // seed limited
+  for (const [cardType, qty] of LIMITED_INIT) {
+    await db.prepare('INSERT INTO limited (card_type, remaining) VALUES (?, ?) ON CONFLICT(card_type) DO NOTHING;')
+      .bind(cardType, qty)
+      .run()
+  }
+}
+
+async function rateLimit(db, ip) {
+  const now = Date.now()
+  const row = await db.prepare('SELECT last_ms FROM ip_rate WHERE ip = ?;').bind(ip).first()
+  const last = row?.last_ms ?? 0
+  if (now - last < 30_000) {
+    return { ok: false, retryAfterMs: 30_000 - (now - last) }
+  }
+  await db.prepare('INSERT INTO ip_rate (ip, last_ms) VALUES (?, ?) ON CONFLICT(ip) DO UPDATE SET last_ms = excluded.last_ms;')
+    .bind(ip, now)
+    .run()
+  return { ok: true }
+}
+
+async function nextCardNo(db) {
+  // SQLite RETURNING supported in D1
+  const r = await db.prepare('UPDATE meta SET next_no = next_no + 1 WHERE id = 1 RETURNING next_no - 1 AS card_no;').run()
+  const cardNo = r?.results?.[0]?.card_no
+  if (!cardNo) throw new Error('Failed to allocate card number')
+  return cardNo
+}
+
+async function pickCardType(db) {
+  // Try limited first (weighted by remaining)
+  const limited = await db.prepare('SELECT card_type, remaining FROM limited WHERE remaining > 0;').all()
+  const rows = limited?.results || []
+  const total = rows.reduce((s, x) => s + (x.remaining || 0), 0)
+
+  if (total > 0) {
+    let r = Math.floor(Math.random() * total) + 1
+    for (const row of rows) {
+      r -= row.remaining
+      if (r <= 0) {
+        // atomic decrement
+        const dec = await db.prepare('UPDATE limited SET remaining = remaining - 1 WHERE card_type = ? AND remaining > 0;')
+          .bind(row.card_type)
+          .run()
+        if ((dec.meta?.changes || 0) === 1) return row.card_type
+        // race: retry
+        return pickCardType(db)
+      }
+    }
+  }
+
+  // fallback unlimited
+  return UNLIMITED[Math.floor(Math.random() * UNLIMITED.length)]
 }
 
 export default {
@@ -58,111 +146,29 @@ export default {
       const vr = await v.json().catch(() => null)
       if (!vr?.success) return bad('Human verification failed', 403)
 
-      if (!env.CLAIM_DO) return bad('Server not configured (CLAIM_DO binding missing)', 500)
+      if (!env.DB) return bad('Server not configured (DB binding missing)', 500)
 
-      // Durable Object claim
-      const id = env.CLAIM_DO.idFromName('global')
-      const stub = env.CLAIM_DO.get(id)
-      const r = await stub.fetch('https://do/claim', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-client-ip': ip },
-        body: JSON.stringify({ name }),
-      })
+      try {
+        await ensureSchema(env.DB)
+        const rl = await rateLimit(env.DB, ip || 'unknown')
+        if (!rl.ok) return bad('Too many requests', 429, { retryAfterMs: rl.retryAfterMs })
 
-      const text = await r.text()
-      let data
-      try { data = JSON.parse(text) } catch { data = { ok: false, error: 'Bad backend response', raw: text.slice(0, 200) } }
-      return json(data, { status: r.status })
+        const cardTypeId = await pickCardType(env.DB)
+        const cardNoInt = await nextCardNo(env.DB)
+        const image = `/assets/cards/${cardTypeId}.jpg`
+
+        return json({
+          ok: true,
+          name,
+          cardTypeId,
+          cardNo: `#${padNo(cardNoInt)}`,
+          image,
+        })
+      } catch (e) {
+        return bad('Server error', 500)
+      }
     }
 
-    // Static fallback: let Pages serve assets
     return fetch(request)
   },
-}
-
-export class ClaimDO {
-  constructor(state, env) {
-    this.state = state
-    this.env = env
-  }
-
-  async fetch(request) {
-    const url = new URL(request.url)
-    if (url.pathname !== '/claim' || request.method !== 'POST') {
-      return json({ ok: false, error: 'Not found' }, { status: 404 })
-    }
-
-    const { name } = await request.json()
-
-    // Rate limit per IP: 1 claim / 30 seconds
-    const ip = request.headers.get('x-client-ip') || 'unknown'
-    const ipKey = `ip:${ip}`
-    const now = Date.now()
-
-    const unlimited = [1, 2, 4, 5, 6, 7, 8]
-    const limitedDeckRaw = [
-      3,
-      9, 9, 9, 9, 9,
-      10, 10, 10,
-      11,
-      12, 12,
-    ]
-
-    const result = await this.state.storage.transaction(async (tx) => {
-      const last = (await tx.get(ipKey)) ?? 0
-      if (now - last < 30_000) {
-        return { rateLimited: true, retryAfterMs: 30_000 - (now - last) }
-      }
-      await tx.put(ipKey, now)
-
-      let nextNo = (await tx.get('nextNo')) ?? 1
-      let deck = (await tx.get('limitedDeck'))
-      let idx = (await tx.get('limitedIdx')) ?? 0
-
-      if (!deck) {
-        deck = shuffle(limitedDeckRaw)
-        idx = 0
-      }
-
-      const cardNo = nextNo
-      nextNo = nextNo + 1
-
-      let cardTypeId
-      if (idx < deck.length) {
-        cardTypeId = deck[idx]
-        idx += 1
-      } else {
-        cardTypeId = unlimited[Math.floor(Math.random() * unlimited.length)]
-      }
-
-      await tx.put('nextNo', nextNo)
-      await tx.put('limitedDeck', deck)
-      await tx.put('limitedIdx', idx)
-
-      return { cardTypeId, cardNo }
-    })
-
-    if (result.rateLimited) {
-      return json({ ok: false, error: 'Too many requests', retryAfterMs: result.retryAfterMs }, { status: 429 })
-    }
-
-    const image = `/assets/cards/${result.cardTypeId}.jpg`
-
-    return json({
-      ok: true,
-      name,
-      cardTypeId: result.cardTypeId,
-      cardNo: `#${padNo(result.cardNo)}`,
-      image,
-    })
-  }
-}
-
-function shuffle(arr) {
-  const a = arr.slice()
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
 }
