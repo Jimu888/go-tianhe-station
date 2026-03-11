@@ -143,15 +143,13 @@
   function set(el, left, top){ el.style.left = px(left); el.style.top = px(top) }
 
   function dumpOne(cardId){
-    const iw = img.naturalWidth||1, ih = img.naturalHeight||1
-    const cw = stage.clientWidth||1, ch = stage.clientHeight||1
-    const sx = iw/cw, sy = ih/ch
+    // New schema: store export-space coords (540x1080 stage space) + fontPx directly.
     const n = xy(nameEl), k = xy(noEl)
-    const nh = parseFloat(getComputedStyle(nameEl).fontSize)*1.2
-    const kh = parseFloat(getComputedStyle(noEl).fontSize)*1.2
+    const nfs = parseFloat(getComputedStyle(nameEl).fontSize)
+    const kfs = parseFloat(getComputedStyle(noEl).fontSize)
     const cfg = {
-      nameBox: { x: Math.round(n.left*sx), y: Math.round(n.top*sy), w: 0, h: Math.round(nh*sy) },
-      noBox:   { x: Math.round(k.left*sx), y: Math.round(k.top*sy), w: 0, h: Math.round(kh*sy) }
+      name: { left: Math.round(n.left), top: Math.round(n.top), font: Math.round(nfs) },
+      no:   { left: Math.round(k.left), top: Math.round(k.top), font: Math.round(kfs) }
     }
     allCfg[String(cardId)] = cfg
     return cfg

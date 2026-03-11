@@ -74,46 +74,57 @@ function applyOverlayLayoutTo(cardTypeId, imgEl, nameEl, noEl, cardEl){
   const cfg = cardConfigs[String(cardTypeId)]
   if (!cfg?.nameBox || !cfg?.noBox) return
 
-  const iw = imgEl.naturalWidth || 1
-  const ih = imgEl.naturalHeight || 1
   const cw = cardEl.clientWidth || 1
   const ch = cardEl.clientHeight || 1
 
-  // posterImg uses object-fit: cover. Must account for cover scale + crop offsets.
-  const scale = Math.max(cw / iw, ch / ih)
-  const dw = iw * scale
-  const dh = ih * scale
-  const ox = (cw - dw) / 2
-  const oy = (ch - dh) / 2
+  // Preferred: new schema from calib.html (export-space coords)
+  if (cfg.name && cfg.no) {
+    nameEl.style.left = cfg.name.left + 'px'
+    nameEl.style.top = cfg.name.top + 'px'
+    nameEl.style.fontSize = cfg.name.font + 'px'
 
-  const nb = cfg.nameBox
-  const xb = cfg.noBox
+    // Apply global tweak: move all numbers up 10px
+    const GLOBAL_NO_Y = -10
+    noEl.style.left = cfg.no.left + 'px'
+    noEl.style.top = (cfg.no.top + GLOBAL_NO_Y) + 'px'
+    noEl.style.fontSize = cfg.no.font + 'px'
+  } else {
+    // Back-compat: old schema (natural-image coords)
+    const iw = imgEl.naturalWidth || 1
+    const ih = imgEl.naturalHeight || 1
+    const scale = Math.max(cw / iw, ch / ih)
+    const dw = iw * scale
+    const dh = ih * scale
+    const ox = (cw - dw) / 2
+    const oy = (ch - dh) / 2
 
-  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+    const nb = cfg.nameBox
+    const xb = cfg.noBox
 
-  let nameLeft = nb.x * scale + ox
-  let nameTop  = nb.y * scale + oy
-  let noLeft   = xb.x * scale + ox
-  let noTop    = xb.y * scale + oy
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
 
-  nameLeft = clamp(nameLeft, -220, cw + 220)
-  nameTop  = clamp(nameTop, -220, ch + 220)
-  noLeft   = clamp(noLeft, -220, cw + 220)
-  noTop    = clamp(noTop, -220, ch + 220)
+    let nameLeft = nb.x * scale + ox
+    let nameTop  = nb.y * scale + oy
+    let noLeft   = xb.x * scale + ox
+    let noTop    = xb.y * scale + oy
 
-  // Apply global tweak: move all numbers up 10px
-  const GLOBAL_NO_Y = -10
+    nameLeft = clamp(nameLeft, -220, cw + 220)
+    nameTop  = clamp(nameTop, -220, ch + 220)
+    noLeft   = clamp(noLeft, -220, cw + 220)
+    noTop    = clamp(noTop, -220, ch + 220)
 
-  nameEl.style.left = Math.round(nameLeft) + 'px'
-  nameEl.style.top  = Math.round(nameTop) + 'px'
-  noEl.style.left   = Math.round(noLeft) + 'px'
-  noEl.style.top    = Math.round(noTop + GLOBAL_NO_Y) + 'px'
+    const GLOBAL_NO_Y = -10
 
-  // font sizes from calibrated heights (h is in natural-image space)
-  const nameFont = Math.max(10, Math.min(120, Math.round((nb.h || 420) * scale / 1.2)))
-  const noFont = Math.max(10, Math.min(80, Math.round((xb.h || 200) * scale / 1.2)))
-  nameEl.style.fontSize = nameFont + 'px'
-  noEl.style.fontSize = noFont + 'px'
+    nameEl.style.left = Math.round(nameLeft) + 'px'
+    nameEl.style.top  = Math.round(nameTop) + 'px'
+    noEl.style.left   = Math.round(noLeft) + 'px'
+    noEl.style.top    = Math.round(noTop + GLOBAL_NO_Y) + 'px'
+
+    const nameFont = Math.max(10, Math.min(120, Math.round((nb.h || 420) * scale / 1.2)))
+    const noFont = Math.max(10, Math.min(80, Math.round((xb.h || 200) * scale / 1.2)))
+    nameEl.style.fontSize = nameFont + 'px'
+    noEl.style.fontSize = noFont + 'px'
+  }
 
   nameEl.style.display = 'block'
   noEl.style.display = 'block'
