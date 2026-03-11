@@ -19,11 +19,12 @@
 /* hidden export target */
 .exportHidden{
   position: fixed;
-  left: -99999px;
+  left: -3000px;
   top: 0;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
+  width: 1080px;
+  height: 2160px;
+  overflow: visible; /* do NOT clip exportCard */
+  pointer-events: none;
 }
 
 .openState{

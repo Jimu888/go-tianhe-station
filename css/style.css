@@ -467,7 +467,7 @@ input[type="text"]:focus, textarea:focus, select:focus{
   width: 600px;
   height: 720px;
   overflow: hidden;
-  border-radius: 20px;
+  border-radius: 0;
 
   display: flex;
   justify-content: center;
