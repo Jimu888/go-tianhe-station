@@ -435,28 +435,13 @@ async function downloadPNG(){
   }
 }
 
-async function copyCopyText(){
-  const text = copyText.value
-  try {
-    await navigator.clipboard.writeText(text)
-    btnCopy.textContent = '已复制'
-    setTimeout(()=>btnCopy.textContent='复制', 900)
-  } catch {
-    copyText.select()
-    document.execCommand('copy')
-    btnCopy.textContent = '已复制'
-    setTimeout(()=>btnCopy.textContent='复制', 900)
-  }
-}
-
 nameInput.addEventListener('input', ()=>{
   setNameTextOnly()
 })
 btnDownload.addEventListener('click', downloadPNG)
-btnCopy.addEventListener('click', copyCopyText)
 
 async function exportAll12(){
-  const name = normalizeText(nameInput.value) || '章人丹'
+  const name = normalizeText(nameInput.value) || '川网GO地铁'
   if (!isTestMode()) {
     showModal('仅测试模式可用', '这个功能只在测试模式开启：请在网址后加 ?test=1。', { type:'info', okText:'知道了' })
     return
