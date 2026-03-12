@@ -80,6 +80,7 @@ async function ensureSchema(db) {
   await db.exec('CREATE TABLE IF NOT EXISTS ip_rate (ip TEXT PRIMARY KEY, last_ms INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS phone_claims (phone_hash TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS device_claims (device_hash TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
+  await db.exec('CREATE TABLE IF NOT EXISTS claim_log (id INTEGER PRIMARY KEY AUTOINCREMENT, ts_ms INTEGER NOT NULL, ip TEXT, reason TEXT, phone_hash_prefix TEXT, device_hash_prefix TEXT, card_no_int INTEGER, card_type INTEGER);')
 
   await db.prepare('INSERT INTO meta (id, next_no) VALUES (1, 1) ON CONFLICT(id) DO NOTHING;').run()
 
@@ -242,6 +243,9 @@ export async function onRequestPost(context) {
     const exDev = await getExistingDeviceClaim(env.DB, dh)
     if (exDev?.card_no_int && exDev?.card_type) {
       const cardNo = `#${padNo(exDev.card_no_int)}`
+      await env.DB.prepare('INSERT INTO claim_log (ts_ms, ip, reason, phone_hash_prefix, device_hash_prefix, card_no_int, card_type) VALUES (?, ?, ?, ?, ?, ?, ?);')
+        .bind(Date.now(), ip, 'device', ph.slice(0, 10), dh.slice(0, 10), exDev.card_no_int, exDev.card_type)
+        .run()
       return json({
         ok: true,
         alreadyClaimed: true,
@@ -258,9 +262,13 @@ export async function onRequestPost(context) {
     const exPhone = await getExistingPhoneClaim(env.DB, ph)
     if (exPhone?.card_no_int && exPhone?.card_type) {
       const cardNo = `#${padNo(exPhone.card_no_int)}`
-      // also bind this device to the existing claim (best effort)
-      await env.DB.prepare('INSERT INTO device_claims (device_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?) ON CONFLICT(device_hash) DO NOTHING;')
+      // bind this device to the existing claim (must succeed for consistency)
+      await env.DB.prepare('INSERT INTO device_claims (device_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?) ON CONFLICT(device_hash) DO UPDATE SET claimed_ms=excluded.claimed_ms, card_no_int=excluded.card_no_int, card_type=excluded.card_type;')
         .bind(dh, Date.now(), exPhone.card_no_int, exPhone.card_type)
+        .run()
+
+      await env.DB.prepare('INSERT INTO claim_log (ts_ms, ip, reason, phone_hash_prefix, device_hash_prefix, card_no_int, card_type) VALUES (?, ?, ?, ?, ?, ?, ?);')
+        .bind(Date.now(), ip, 'phone', ph.slice(0, 10), dh.slice(0, 10), exPhone.card_no_int, exPhone.card_type)
         .run()
 
       return json({
@@ -297,13 +305,17 @@ export async function onRequestPost(context) {
       cardTypeId = pickUnlimitedCardType()
     }
 
-    // Insert both bindings
+    // Insert both bindings (must succeed; otherwise fail the claim)
     await env.DB.prepare('INSERT INTO phone_claims (phone_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?);')
       .bind(ph, Date.now(), cardNoInt, cardTypeId)
       .run()
 
-    await env.DB.prepare('INSERT INTO device_claims (device_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?);')
+    await env.DB.prepare('INSERT INTO device_claims (device_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?) ON CONFLICT(device_hash) DO UPDATE SET claimed_ms=excluded.claimed_ms, card_no_int=excluded.card_no_int, card_type=excluded.card_type;')
       .bind(dh, Date.now(), cardNoInt, cardTypeId)
+      .run()
+
+    await env.DB.prepare('INSERT INTO claim_log (ts_ms, ip, reason, phone_hash_prefix, device_hash_prefix, card_no_int, card_type) VALUES (?, ?, ?, ?, ?, ?, ?);')
+      .bind(Date.now(), ip, 'new', ph.slice(0, 10), dh.slice(0, 10), cardNoInt, cardTypeId)
       .run()
 
     const cardNo = `#${padNo(cardNoInt)}`
