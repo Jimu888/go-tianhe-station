@@ -73,6 +73,38 @@ function padNo(n) {
   return s.length >= 5 ? s : '0'.repeat(5 - s.length) + s
 }
 
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+async function ensurePublicMap(db) {
+  await db.exec('CREATE TABLE IF NOT EXISTS public_map (public_no INTEGER PRIMARY KEY, card_no_int INTEGER UNIQUE NOT NULL);')
+}
+
+async function getPublicNoByCardNo(db, cardNoInt) {
+  const row = await db.prepare('SELECT public_no FROM public_map WHERE card_no_int = ?;').bind(cardNoInt).first()
+  return row?.public_no ?? null
+}
+
+async function allocatePublicNo(db, cardNoInt) {
+  // Try to allocate a unique 5-digit public number (1..99999)
+  for (let i = 0; i < 30; i++) {
+    const n = randInt(1, 99999)
+    const r = await db.prepare('INSERT INTO public_map (public_no, card_no_int) VALUES (?, ?) ON CONFLICT(public_no) DO NOTHING;')
+      .bind(n, cardNoInt)
+      .run()
+    if ((r.meta?.changes || 0) === 1) return n
+  }
+  throw new Error('Failed to allocate public number')
+}
+
+async function ensurePublicNo(db, cardNoInt) {
+  const existing = await getPublicNoByCardNo(db, cardNoInt)
+  if (existing) return existing
+  return allocatePublicNo(db, cardNoInt)
+}
+
+
 async function ensureSchema(db) {
   // D1 can be picky about multi-statement exec on some accounts; run one-by-one
   await db.exec('CREATE TABLE IF NOT EXISTS meta (id INTEGER PRIMARY KEY, next_no INTEGER NOT NULL);')
@@ -81,6 +113,7 @@ async function ensureSchema(db) {
   await db.exec('CREATE TABLE IF NOT EXISTS phone_claims (phone_hash TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS device_claims (device_hash TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS claim_log (id INTEGER PRIMARY KEY AUTOINCREMENT, ts_ms INTEGER NOT NULL, ip TEXT, reason TEXT, phone_hash_prefix TEXT, device_hash_prefix TEXT, card_no_int INTEGER, card_type INTEGER);')
+  await ensurePublicMap(db)
 
   await db.prepare('INSERT INTO meta (id, next_no) VALUES (1, 1) ON CONFLICT(id) DO NOTHING;').run()
 
@@ -231,7 +264,8 @@ export async function onRequestPost(context) {
     // Device first: one device -> one card
     const exDev = await getExistingDeviceClaim(env.DB, dh)
     if (exDev?.card_no_int && exDev?.card_type) {
-      const cardNo = `#${padNo(exDev.card_no_int)}`
+      const publicNo = await ensurePublicNo(env.DB, exDev.card_no_int)
+      const cardNo = `#${padNo(publicNo)}`
       await env.DB.prepare('INSERT INTO claim_log (ts_ms, ip, reason, phone_hash_prefix, device_hash_prefix, card_no_int, card_type) VALUES (?, ?, ?, ?, ?, ?, ?);')
         .bind(Date.now(), ip, 'device', ph.slice(0, 10), dh.slice(0, 10), exDev.card_no_int, exDev.card_type)
         .run()
@@ -251,7 +285,8 @@ export async function onRequestPost(context) {
     // Phone: allow re-download on another device, but not multiple new claims
     const exPhone = await getExistingPhoneClaim(env.DB, ph)
     if (exPhone?.card_no_int && exPhone?.card_type) {
-      const cardNo = `#${padNo(exPhone.card_no_int)}`
+      const publicNo = await ensurePublicNo(env.DB, exPhone.card_no_int)
+      const cardNo = `#${padNo(publicNo)}`
       // bind this device to the existing claim (must succeed for consistency)
       await env.DB.prepare('INSERT INTO device_claims (device_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?) ON CONFLICT(device_hash) DO UPDATE SET claimed_ms=excluded.claimed_ms, card_no_int=excluded.card_no_int, card_type=excluded.card_type;')
         .bind(dh, Date.now(), exPhone.card_no_int, exPhone.card_type)
@@ -312,7 +347,8 @@ export async function onRequestPost(context) {
       .bind(Date.now(), ip, 'new', ph.slice(0, 10), dh.slice(0, 10), cardNoInt, cardTypeId)
       .run()
 
-    const cardNo = `#${padNo(cardNoInt)}`
+    const publicNo = await ensurePublicNo(env.DB, cardNoInt)
+    const cardNo = `#${padNo(publicNo)}`
     return json({
       ok: true,
       alreadyClaimed: false,
