@@ -105,10 +105,15 @@ async function rateLimit(db, ip) {
   return { ok: true }
 }
 
+const TOTAL_CAP = 500
+
 async function nextCardNo(db) {
-  const r = await db.prepare('UPDATE meta SET next_no = next_no + 1 WHERE id = 1 RETURNING next_no - 1 AS card_no;').run()
+  // Atomic cap: only allocate numbers 1..TOTAL_CAP
+  const r = await db.prepare('UPDATE meta SET next_no = next_no + 1 WHERE id = 1 AND next_no <= ? RETURNING next_no - 1 AS card_no;')
+    .bind(TOTAL_CAP)
+    .run()
   const cardNo = r?.results?.[0]?.card_no
-  if (!cardNo) throw new Error('Failed to allocate card number')
+  if (!cardNo) return null
   return cardNo
 }
 
@@ -271,10 +276,13 @@ export async function onRequestPost(context) {
     const rl = await rateLimit(env.DB, ip)
     if (!rl.ok) return bad('Too many requests', 429, { retryAfterMs: rl.retryAfterMs })
 
-    // Allocate global number first
+    // Allocate global number first (with TOTAL_CAP)
     const cardNoInt = await nextCardNo(env.DB)
+    if (!cardNoInt) {
+      return bad('卡片已全被领取，请关注下一次活动', 410, { exhausted: true })
+    }
 
-    // LIMITED draw plan (方案B): 12 winning numbers within 1..1500
+    // LIMITED draw plan (方案B): fixed winning numbers within 1..1500
     // If >1500 => always unlimited.
     const totalLimited = await limitedRemainingTotal(env.DB)
     let cardTypeId = null
