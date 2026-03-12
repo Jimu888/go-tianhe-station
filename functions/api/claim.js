@@ -7,16 +7,14 @@
 // Card distribution (per latest file-name notes)
 // No "-N张" suffix => unlimited
 // With "-N张" suffix => limited with remaining=N
-const UNLIMITED = [2, 4, 5, 7, 8, 9, 10]
+const UNLIMITED = [2, 3, 4, 5, 7, 8, 9, 10, 11]
 const LIMITED_INIT = [
   [1, 1],
-  [3, 5],
   [6, 3],
-  [11, 1],
   [12, 2],
 ]
 
-const HIDDEN_SET = new Set([1, 3, 6, 11, 12])
+const HIDDEN_SET = new Set([1, 6, 12])
 
 function json(data, init = {}) {
   return new Response(JSON.stringify(data), {
