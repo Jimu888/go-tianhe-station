@@ -139,6 +139,27 @@ function isIOS(){
   return /iPhone|iPad|iPod/i.test(ua)
 }
 
+async function withTimeout(promise, ms){
+  return await Promise.race([
+    promise,
+    new Promise((resolve)=>setTimeout(()=>resolve('timeout'), ms)),
+  ])
+}
+
+async function fetchJsonWithTimeout(url, options, ms){
+  const ctl = new AbortController()
+  const t = setTimeout(()=>ctl.abort('timeout'), ms)
+  try{
+    const r = await fetch(url, { ...(options||{}), signal: ctl.signal })
+    const text = await r.text()
+    let data
+    try { data = JSON.parse(text) } catch { data = null }
+    return { status: r.status, data, text }
+  } finally {
+    clearTimeout(t)
+  }
+}
+
 if(modalMask) modalMask.addEventListener('click', hideModal)
 if(modalOk) modalOk.addEventListener('click', hideModal)
 if(modalCancel) modalCancel.addEventListener('click', hideModal)
@@ -260,15 +281,13 @@ async function claimCard(name){
   const deviceId = DEVICE_ID
 
   const qs = isTestMode() ? `?test=1${getForcedCard()?`&card=${encodeURIComponent(getForcedCard())}`:''}` : ''
-  const r = await fetch('/api/claim' + qs, {
+  const r = await fetchJsonWithTimeout('/api/claim' + qs, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ name, phone, deviceId }),
-  })
+  }, 12000)
 
-  const text = await r.text()
-  let data
-  try { data = JSON.parse(text) } catch { data = null }
+  const data = r.data
   if (!data) throw new Error('服务器返回异常，请稍后重试')
   if (!data?.ok) throw new Error(data?.error || 'claim failed')
   return data
@@ -383,7 +402,7 @@ async function downloadPNG(){
     // 1) show preview as dataURL
     // 2) download from same canvas => preview == saved
     if (document.fonts?.ready) {
-      try { await document.fonts.ready } catch {}
+      try { await withTimeout(document.fonts.ready, 1200) } catch {}
     }
     const canvas = await html2canvas(exportCard, {
       backgroundColor: null,
@@ -491,7 +510,7 @@ async function exportAll12(){
       applyOverlayLayout(i)
 
       if (document.fonts?.ready) {
-        try { await document.fonts.ready } catch {}
+        try { await withTimeout(document.fonts.ready, 1200) } catch {}
       }
       const canvas = await html2canvas(exportCard, {
         backgroundColor: null,
