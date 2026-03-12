@@ -118,6 +118,11 @@ function hideModal(){
   try{ modalBox.style.display = 'none' }catch{}
 }
 
+function isIOS(){
+  const ua = navigator.userAgent || ''
+  return /iPhone|iPad|iPod/i.test(ua)
+}
+
 if(modalMask) modalMask.addEventListener('click', hideModal)
 if(modalOk) modalOk.addEventListener('click', hideModal)
 if(modalCancel) modalCancel.addEventListener('click', hideModal)
@@ -380,25 +385,49 @@ async function downloadPNG(){
 
     setStatus('图片已生成，开始下载…', 'ok')
 
-    canvas.toBlob((blob)=>{
+    canvas.toBlob(async (blob)=>{
       if(!blob){
         setStatus('导出失败，请重试', 'error')
         showModal('导出失败', '图片生成失败了，请再试一次。', { type:'error', okText:'重试' })
         return
       }
-      const a = document.createElement('a')
-      const url = URL.createObjectURL(blob)
 
       const safeName = res.name.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'_')
+      const filename = `card-${safeName}-${res.cardNo.replace('#','')}.png`
+
+      // iOS: prefer native share sheet if available
+      try {
+        if (isIOS() && navigator.share && window.File) {
+          const file = new File([blob], filename, { type: 'image/png' })
+          await navigator.share({ files: [file], title: '自由卡', text: '保存到相册或分享给朋友' })
+          setStatus('已打开系统分享面板，可选择「存储图像/存储到文件」。', 'ok')
+          showModal('保存提示', '已打开系统分享面板。建议选择「存储图像」保存到相册。', { type:'ok', okText:'知道了' })
+          return
+        }
+      } catch (e) {
+        // user cancelled or share failed -> fall back
+      }
+
+      // fallback: normal download
+      const a = document.createElement('a')
+      const url = URL.createObjectURL(blob)
       a.href = url
-      a.download = `card-${safeName}-${res.cardNo.replace('#','')}.png`
+      a.download = filename
       document.body.appendChild(a)
       a.click()
       a.remove()
       setTimeout(()=>URL.revokeObjectURL(url), 3000)
 
-      setStatus('下载已开始（如被浏览器拦截，请允许下载）。', 'ok')
-      showModal('已开始下载', '如果浏览器拦截了下载，请选择“允许”。', { type:'ok', okText:'知道了' })
+      if (isIOS()) {
+        // On iOS downloads are confusing; guide user to long-press-save
+        const dataUrl = canvas.toDataURL('image/png')
+        window.open(dataUrl, '_blank')
+        setStatus('iPhone：已打开图片页，长按图片即可「添加到照片」。', 'ok')
+        showModal('iPhone 保存方式', '已为你打开图片页。长按图片 → 「添加到照片」。', { type:'info', okText:'我知道了' })
+      } else {
+        setStatus('下载已开始（如被浏览器拦截，请允许下载）。', 'ok')
+        showModal('已开始下载', '如果浏览器拦截了下载，请选择“允许”。', { type:'ok', okText:'知道了' })
+      }
     }, 'image/png')
 
   } catch(e){
