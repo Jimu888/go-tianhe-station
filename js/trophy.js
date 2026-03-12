@@ -343,8 +343,13 @@ async function downloadPNG(){
   try{
     const res = await claimCard(name)
 
+    const isHidden = (res?.rarity === 'hidden')
+
     if (res?.alreadyClaimed) {
-      if (res.reason === 'device') {
+      if (isHidden) {
+        setStatus('你抽到了隐藏款：已为你重新生成并下载（编号不变）。', 'warn')
+        showModal('恭喜！隐藏款掉落', '你抽到的是隐藏款自由卡，记得保存好这张卡片。', { type:'ok', okText: '立即下载' })
+      } else if (res.reason === 'device') {
         setStatus('你已在本设备领取过：已为你重新生成并下载同一张卡（编号不变）。', 'warn')
         showModal('你已领取过', '本设备已领取过自由卡，本次将为你重新生成并下载同一张卡（编号不变）。', { type:'warn', okText:'重新下载' })
       } else if (res.reason === 'phone') {
@@ -355,8 +360,13 @@ async function downloadPNG(){
         showModal('你已领取过', '本次将为你重新生成并下载同一张卡（编号不变）。')
       }
     } else {
-      setStatus('领取成功！正在生成图片…', 'ok')
-      showModal('领取成功', '正在为你生成图片，请稍等…', { type:'ok', okText:'好的' })
+      if (isHidden) {
+        setStatus('恭喜！你抽到了隐藏款，正在生成图片…', 'ok')
+        showModal('恭喜！隐藏款掉落', '你抽到的是隐藏款自由卡，记得保存好这张卡片。', { type:'ok', okText:'生成并下载' })
+      } else {
+        setStatus('领取成功！正在生成图片…', 'ok')
+        showModal('领取成功', '正在为你生成图片，请稍等…', { type:'ok', okText:'好的' })
+      }
     }
 
     // Update preview to the assigned card

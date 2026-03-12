@@ -16,6 +16,8 @@ const LIMITED_INIT = [
   [12, 2],
 ]
 
+const HIDDEN_SET = new Set([1, 3, 6, 11, 12])
+
 function json(data, init = {}) {
   return new Response(JSON.stringify(data), {
     headers: { 'content-type': 'application/json; charset=utf-8' },
@@ -235,6 +237,7 @@ export async function onRequestPost(context) {
         reason: 'device',
         name,
         cardTypeId: exDev.card_type,
+        rarity: HIDDEN_SET.has(exDev.card_type) ? 'hidden' : 'regular',
         cardNo,
         cardNoDisplay: `（编号${cardNo}）`,
         image: `/assets/cards/${exDev.card_type}.jpg`,
@@ -260,6 +263,7 @@ export async function onRequestPost(context) {
         reason: 'phone',
         name,
         cardTypeId: exPhone.card_type,
+        rarity: HIDDEN_SET.has(exPhone.card_type) ? 'hidden' : 'regular',
         cardNo,
         cardNoDisplay: `（编号${cardNo}）`,
         image: `/assets/cards/${exPhone.card_type}.jpg`,
@@ -308,6 +312,7 @@ export async function onRequestPost(context) {
       reason: 'new',
       name,
       cardTypeId,
+      rarity: HIDDEN_SET.has(cardTypeId) ? 'hidden' : 'regular',
       cardNo,
       cardNoDisplay: `（编号${cardNo}）`,
       image: `/assets/cards/${cardTypeId}.jpg`,
