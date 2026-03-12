@@ -318,10 +318,6 @@ async function downloadPNG(){
       return
     }
 
-    if (!getTurnstileToken()) {
-      showModal('还差一步', '请先完成下方的人机验证，再领取自由卡。', { type:'info', okText:'去验证' })
-      return
-    }
   }
 
   btnDownload.disabled = true
