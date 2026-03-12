@@ -82,6 +82,22 @@ function setStatus(msg, kind='info'){
   statusBar.style.background = colors[kind] || colors.info
 }
 
+// Always surface JS errors to user (otherwise it looks like "no response")
+window.addEventListener('error', (ev)=>{
+  try{
+    const msg = String(ev?.message || ev?.error?.message || '未知错误')
+    setStatus('发生错误：' + msg, 'error')
+    showModal('发生错误', msg, { type:'error', okText:'知道了' })
+  }catch{}
+})
+window.addEventListener('unhandledrejection', (ev)=>{
+  try{
+    const msg = String(ev?.reason?.message || ev?.reason || '未知错误')
+    setStatus('发生错误：' + msg, 'error')
+    showModal('发生错误', msg, { type:'error', okText:'知道了' })
+  }catch{}
+})
+
 function showModal(title, text, opts={}){
   if(!modalMask || !modalBox) return alert(text || title || '')
   const { type='info', okText='知道了', cancelText='', showCancel=false } = opts || {}
