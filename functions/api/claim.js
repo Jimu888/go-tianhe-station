@@ -159,9 +159,10 @@ function mulberry32(seed) {
 }
 
 async function seededWinningSet(env) {
-  // Exactly 12 winners within 1..1500 (stable across deploys as long as seed stays same)
-  const MAX = 1500
-  const WIN = 12
+  // Winners must fall within TOTAL_CAP so that when 500 cards are exhausted,
+  // all limited cards are guaranteed to have been drawn (no leftovers).
+  const MAX = TOTAL_CAP
+  const WIN = 6
   const seedStr = (env.LIMITED_DRAW_SEED || 'seed').toString()
   const hex = await sha256Hex(seedStr)
   const seed = parseInt(hex.slice(0, 8), 16) >>> 0
@@ -282,12 +283,12 @@ export async function onRequestPost(context) {
       return bad('卡片已全被领取，请关注下一次活动', 410, { exhausted: true })
     }
 
-    // LIMITED draw plan (方案B): fixed winning numbers within 1..1500
-    // If >1500 => always unlimited.
+    // LIMITED draw plan (方案B): fixed winning numbers within 1..TOTAL_CAP
+    // This guarantees that when TOTAL_CAP cards are exhausted, limited cards are also exhausted.
     const totalLimited = await limitedRemainingTotal(env.DB)
     let cardTypeId = null
 
-    if (cardNoInt <= 1500 && totalLimited > 0) {
+    if (cardNoInt <= TOTAL_CAP && totalLimited > 0) {
       const winners = await seededWinningSet(env)
       if (winners.has(cardNoInt)) {
         cardTypeId = await pickLimitedCardType(env.DB)
