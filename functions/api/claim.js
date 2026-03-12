@@ -190,8 +190,8 @@ export async function onRequestPost(context) {
 
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown'
 
-  // In test mode: skip Turnstile + rate limit + phone binding + inventory + numbering
-  // In normal mode: require Turnstile + phone binding (idempotent per phone)
+  // In test mode: skip rate limit + phone binding + inventory + numbering
+  // In normal mode: phone binding (idempotent) + device binding + IP rate limit
 
   try {
     await ensureSchema(env.DB)
@@ -213,23 +213,6 @@ export async function onRequestPost(context) {
         image: `/assets/cards/${cardTypeId}.jpg`,
       })
     }
-
-    // verify Turnstile
-    const token = (body?.cfTurnstileToken ?? '').toString()
-    if (!token) return bad('Turnstile token required')
-    if (!env.TURNSTILE_SECRET) return bad('Server not configured (TURNSTILE_SECRET missing)', 500)
-
-    const form = new FormData()
-    form.set('secret', env.TURNSTILE_SECRET)
-    form.set('response', token)
-    if (ip) form.set('remoteip', ip)
-
-    const v = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      body: form,
-    })
-    const vr = await v.json().catch(() => null)
-    if (!vr?.success) return bad('Human verification failed', 403)
 
     const phone = normalizePhone(body?.phone)
     const deviceId = (body?.deviceId ?? '').toString().trim()

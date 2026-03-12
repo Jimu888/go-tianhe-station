@@ -145,11 +145,6 @@ function normalizePhone(s){
   return (s ?? '').toString().replace(/\s+/g,'').trim()
 }
 
-function getTurnstileToken(){
-  // Turnstile puts token into a hidden input named 'cf-turnstile-response'
-  const el = document.querySelector('input[name="cf-turnstile-response"]')
-  return (el && el.value) ? el.value : ''
-}
 
 let cardConfigs = null
 
@@ -247,13 +242,12 @@ function applyOverlayLayout(cardTypeId){
 async function claimCard(name){
   const phone = normalizePhone(phoneInput?.value)
   const deviceId = DEVICE_ID
-  const cfTurnstileToken = getTurnstileToken()
 
   const qs = isTestMode() ? `?test=1${getForcedCard()?`&card=${encodeURIComponent(getForcedCard())}`:''}` : ''
   const r = await fetch('/api/claim' + qs, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, phone, deviceId, cfTurnstileToken }),
+    body: JSON.stringify({ name, phone, deviceId }),
   })
 
   const text = await r.text()
@@ -268,7 +262,7 @@ async function claimTestCard(name, cardTypeId){
   const r = await fetch(`/api/claim?test=1&card=${encodeURIComponent(cardTypeId)}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ name, phone: '', cfTurnstileToken: '' }),
+    body: JSON.stringify({ name, phone: '', deviceId: 'test' }),
   })
   const text = await r.text()
   let data
