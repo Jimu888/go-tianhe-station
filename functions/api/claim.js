@@ -111,26 +111,62 @@ async function nextCardNo(db) {
   return cardNo
 }
 
-async function pickCardType(db) {
+async function limitedRemainingTotal(db) {
+  const limited = await db.prepare('SELECT remaining FROM limited WHERE remaining > 0;').all()
+  const rows = limited?.results || []
+  return rows.reduce((s, x) => s + (x.remaining || 0), 0)
+}
+
+async function pickLimitedCardType(db) {
   const limited = await db.prepare('SELECT card_type, remaining FROM limited WHERE remaining > 0;').all()
   const rows = limited?.results || []
   const total = rows.reduce((s, x) => s + (x.remaining || 0), 0)
+  if (total <= 0) return null
 
-  if (total > 0) {
-    let r = Math.floor(Math.random() * total) + 1
-    for (const row of rows) {
-      r -= row.remaining
-      if (r <= 0) {
-        const dec = await db.prepare('UPDATE limited SET remaining = remaining - 1 WHERE card_type = ? AND remaining > 0;')
-          .bind(row.card_type)
-          .run()
-        if ((dec.meta?.changes || 0) === 1) return row.card_type
-        return pickCardType(db)
-      }
+  let r = Math.floor(Math.random() * total) + 1
+  for (const row of rows) {
+    r -= row.remaining
+    if (r <= 0) {
+      const dec = await db.prepare('UPDATE limited SET remaining = remaining - 1 WHERE card_type = ? AND remaining > 0;')
+        .bind(row.card_type)
+        .run()
+      if ((dec.meta?.changes || 0) === 1) return row.card_type
+      return pickLimitedCardType(db)
     }
   }
+  return null
+}
 
+function pickUnlimitedCardType() {
   return UNLIMITED[Math.floor(Math.random() * UNLIMITED.length)]
+}
+
+function mulberry32(seed) {
+  let a = seed >>> 0
+  return function() {
+    a |= 0
+    a = (a + 0x6D2B79F5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+async function seededWinningSet(env) {
+  // Exactly 12 winners within 1..1500 (stable across deploys as long as seed stays same)
+  const MAX = 1500
+  const WIN = 12
+  const seedStr = (env.LIMITED_DRAW_SEED || 'seed').toString()
+  const hex = await sha256Hex(seedStr)
+  const seed = parseInt(hex.slice(0, 8), 16) >>> 0
+  const rnd = mulberry32(seed)
+
+  const set = new Set()
+  while (set.size < WIN) {
+    const n = 1 + Math.floor(rnd() * MAX)
+    set.add(n)
+  }
+  return set
 }
 
 export async function onRequestPost(context) {
@@ -242,10 +278,26 @@ export async function onRequestPost(context) {
     const rl = await rateLimit(env.DB, ip)
     if (!rl.ok) return bad('Too many requests', 429, { retryAfterMs: rl.retryAfterMs })
 
-    const cardTypeId = await pickCardType(env.DB)
+    // Allocate global number first
     const cardNoInt = await nextCardNo(env.DB)
 
-    // Insert both bindings (best effort; if a race happens, fall back to existing)
+    // LIMITED draw plan (方案B): 12 winning numbers within 1..1500
+    // If >1500 => always unlimited.
+    const totalLimited = await limitedRemainingTotal(env.DB)
+    let cardTypeId = null
+
+    if (cardNoInt <= 1500 && totalLimited > 0) {
+      const winners = await seededWinningSet(env)
+      if (winners.has(cardNoInt)) {
+        cardTypeId = await pickLimitedCardType(env.DB)
+      }
+    }
+
+    if (!cardTypeId) {
+      cardTypeId = pickUnlimitedCardType()
+    }
+
+    // Insert both bindings
     await env.DB.prepare('INSERT INTO phone_claims (phone_hash, claimed_ms, card_no_int, card_type) VALUES (?, ?, ?, ?);')
       .bind(ph, Date.now(), cardNoInt, cardTypeId)
       .run()
