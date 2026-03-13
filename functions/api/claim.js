@@ -140,7 +140,7 @@ async function rateLimit(db, ip) {
   return { ok: true }
 }
 
-const TOTAL_CAP = 800
+const TOTAL_CAP = 1400
 // Limited cards are only possible within the first 500 issued cards
 const LIMITED_WINDOW = 500
 

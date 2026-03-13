@@ -24,7 +24,7 @@ export async function onRequestGet(context) {
     const meta = await env.DB.prepare('SELECT next_no FROM meta WHERE id = 1;').first()
     const nextNo = meta?.next_no ?? null
     const claimed = (nextNo != null) ? Math.max(0, Number(nextNo) - 1) : null
-    const cap = 800
+    const cap = 1400
 
     const limited = await env.DB.prepare('SELECT card_type, remaining FROM limited ORDER BY card_type;').all()
     const limitedRows = limited?.results || []
