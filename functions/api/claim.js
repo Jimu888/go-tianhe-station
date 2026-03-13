@@ -112,6 +112,8 @@ async function ensureSchema(db) {
   await db.exec('CREATE TABLE IF NOT EXISTS ip_rate (ip TEXT PRIMARY KEY, last_ms INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS phone_claims (phone_hash TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS device_claims (device_hash TEXT PRIMARY KEY, claimed_ms INTEGER NOT NULL, card_no_int INTEGER NOT NULL, card_type INTEGER NOT NULL);')
+  // PII table (explicit): store plain phone + nickname for export
+  await db.exec('CREATE TABLE IF NOT EXISTS claim_pii (phone_hash TEXT PRIMARY KEY, phone_plain TEXT NOT NULL, name TEXT NOT NULL, updated_ms INTEGER NOT NULL);')
   await db.exec('CREATE TABLE IF NOT EXISTS claim_log (id INTEGER PRIMARY KEY AUTOINCREMENT, ts_ms INTEGER NOT NULL, ip TEXT, reason TEXT, phone_hash_prefix TEXT, device_hash_prefix TEXT, card_no_int INTEGER, card_type INTEGER);')
   await ensurePublicMap(db)
 
@@ -260,6 +262,11 @@ export async function onRequestPost(context) {
 
     const ph = await phoneHash(env, phone)
     const dh = await deviceHash(env, deviceId)
+
+    // store plain phone + nickname (upsert). NOTE: this is sensitive PII.
+    await env.DB.prepare('INSERT INTO claim_pii (phone_hash, phone_plain, name, updated_ms) VALUES (?, ?, ?, ?) ON CONFLICT(phone_hash) DO UPDATE SET phone_plain=excluded.phone_plain, name=excluded.name, updated_ms=excluded.updated_ms;')
+      .bind(ph, phone, name, Date.now())
+      .run()
 
     // Device first: one device -> one card
     const exDev = await getExistingDeviceClaim(env.DB, dh)
