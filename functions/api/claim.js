@@ -140,7 +140,9 @@ async function rateLimit(db, ip) {
   return { ok: true }
 }
 
-const TOTAL_CAP = 500
+const TOTAL_CAP = 800
+// Limited cards are only possible within the first 500 issued cards
+const LIMITED_WINDOW = 500
 
 async function nextCardNo(db) {
   // Atomic cap: only allocate numbers 1..TOTAL_CAP
@@ -194,9 +196,9 @@ function mulberry32(seed) {
 }
 
 async function seededWinningSet(env) {
-  // Winners must fall within TOTAL_CAP so that when 500 cards are exhausted,
+  // Winners must fall within LIMITED_WINDOW so that within the first 500 cards,
   // all limited cards are guaranteed to have been drawn (no leftovers).
-  const MAX = TOTAL_CAP
+  const MAX = LIMITED_WINDOW
   const WIN = 6
   const seedStr = (env.LIMITED_DRAW_SEED || 'seed').toString()
   const hex = await sha256Hex(seedStr)
@@ -325,12 +327,12 @@ export async function onRequestPost(context) {
       return bad('卡片已全被领取，请关注下一次活动', 410, { exhausted: true })
     }
 
-    // LIMITED draw plan (方案B): fixed winning numbers within 1..TOTAL_CAP
-    // This guarantees that when TOTAL_CAP cards are exhausted, limited cards are also exhausted.
+    // LIMITED draw plan (方案B): limited only within the first LIMITED_WINDOW numbers.
+    // After that, ALWAYS unlimited (for the extra 300 cards batch).
     const totalLimited = await limitedRemainingTotal(env.DB)
     let cardTypeId = null
 
-    if (cardNoInt <= TOTAL_CAP && totalLimited > 0) {
+    if (cardNoInt <= LIMITED_WINDOW && totalLimited > 0) {
       const winners = await seededWinningSet(env)
       if (winners.has(cardNoInt)) {
         cardTypeId = await pickLimitedCardType(env.DB)
