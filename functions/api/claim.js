@@ -140,11 +140,17 @@ async function rateLimit(db, ip) {
   return { ok: true }
 }
 
-const TOTAL_CAP = 1600
+const TOTAL_CAP = 1800
 // Limited cards are only possible within the first 500 issued cards
 const LIMITED_WINDOW = 500
-// Extra batch: exactly ONE limited card (type 12) will be issued at this internal number
-const EXTRA_LIMITED_12_NO = 1500
+// Extra limited injections after the first 500.
+// Key = internal card_no_int, Value = limited card_type.
+const EXTRA_LIMITED_MAP = {
+  1500: 12, // previously injected
+  1700: 6,
+  1701: 6,
+  1702: 12,
+}
 
 async function nextCardNo(db) {
   // Atomic cap: only allocate numbers 1..TOTAL_CAP
@@ -336,8 +342,9 @@ export async function onRequestPost(context) {
     const totalLimited = await limitedRemainingTotal(env.DB)
     let cardTypeId = null
 
-    if (cardNoInt === EXTRA_LIMITED_12_NO) {
-      cardTypeId = 12
+    const extraLimited = EXTRA_LIMITED_MAP[cardNoInt]
+    if (extraLimited) {
+      cardTypeId = extraLimited
     } else if (cardNoInt <= LIMITED_WINDOW && totalLimited > 0) {
       const winners = await seededWinningSet(env)
       if (winners.has(cardNoInt)) {
