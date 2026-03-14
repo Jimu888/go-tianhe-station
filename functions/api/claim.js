@@ -140,9 +140,11 @@ async function rateLimit(db, ip) {
   return { ok: true }
 }
 
-const TOTAL_CAP = 1400
+const TOTAL_CAP = 1600
 // Limited cards are only possible within the first 500 issued cards
 const LIMITED_WINDOW = 500
+// Extra batch: exactly ONE limited card (type 12) will be issued at this internal number
+const EXTRA_LIMITED_12_NO = 1500
 
 async function nextCardNo(db) {
   // Atomic cap: only allocate numbers 1..TOTAL_CAP
@@ -327,12 +329,16 @@ export async function onRequestPost(context) {
       return bad('卡片已全被领取，请关注下一次活动', 410, { exhausted: true })
     }
 
-    // LIMITED draw plan (方案B): limited only within the first LIMITED_WINDOW numbers.
-    // After that, ALWAYS unlimited (for the extra 300 cards batch).
+    // LIMITED plan:
+    // - 1..LIMITED_WINDOW: seeded winners can get limited (if remaining > 0)
+    // - >LIMITED_WINDOW: default unlimited
+    // - Special: EXTRA_LIMITED_12_NO will be type 12 (exactly one)
     const totalLimited = await limitedRemainingTotal(env.DB)
     let cardTypeId = null
 
-    if (cardNoInt <= LIMITED_WINDOW && totalLimited > 0) {
+    if (cardNoInt === EXTRA_LIMITED_12_NO) {
+      cardTypeId = 12
+    } else if (cardNoInt <= LIMITED_WINDOW && totalLimited > 0) {
       const winners = await seededWinningSet(env)
       if (winners.has(cardNoInt)) {
         cardTypeId = await pickLimitedCardType(env.DB)
