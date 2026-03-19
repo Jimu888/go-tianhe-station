@@ -140,16 +140,16 @@ async function rateLimit(db, ip) {
   return { ok: true }
 }
 
-const TOTAL_CAP = 1800
+const TOTAL_CAP = 1590
 // Limited cards are only possible within the first 500 issued cards
 const LIMITED_WINDOW = 500
 // Extra limited injections after the first 500.
 // Key = internal card_no_int, Value = limited card_type.
 const EXTRA_LIMITED_MAP = {
   1500: 12, // previously injected
-  1700: 6,
-  1701: 6,
-  1702: 12,
+  1580: 6,  // moved from 1700 to fit within final 30
+  1585: 6,  // moved from 1701 to fit within final 30  
+  1590: 12, // moved from 1702 to fit within final 30
 }
 
 async function nextCardNo(db) {
